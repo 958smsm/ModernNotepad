@@ -1,0 +1,12 @@
+.vs/
+bin/
+obj/
+TestResults/
+publish/
+*.user
+*.suo
+*.nupkg
+artifacts/
+.idea/
+*.zip
+*.sha256

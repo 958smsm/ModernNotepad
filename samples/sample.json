@@ -1,0 +1,10 @@
+{
+  "application": "Modern Notepad",
+  "offline": true,
+  "formats": ["txt", "rtf", "md", "yaml", "json", "xml"],
+  "unicode": "café — مرحبًا — こんにちは",
+  "settings": {
+    "theme": "dark",
+    "smartColoring": false
+  }
+}

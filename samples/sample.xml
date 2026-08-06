@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<notepad offline="true">
+  <formats>
+    <format extension=".txt">Plain text</format>
+    <format extension=".rtf">Rich text</format>
+  </formats>
+  <message language="ar">مرحبًا</message>
+  <message language="ja">こんにちは</message>
+</notepad>

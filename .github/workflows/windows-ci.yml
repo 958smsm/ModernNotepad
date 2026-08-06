@@ -1,0 +1,43 @@
+name: Windows CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-publish:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore ModernNotepad.sln
+
+      - name: Build
+        run: dotnet build ModernNotepad.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/ModernNotepad.Tests/ModernNotepad.Tests.csproj -c Release --no-build --logger "trx;LogFileName=tests.trx"
+
+      - name: Publish x64
+        run: dotnet publish src/ModernNotepad.App/ModernNotepad.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts/publish/win-x64
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: '**/TestResults/*.trx'
+          if-no-files-found: ignore
+
+      - name: Upload x64 application
+        uses: actions/upload-artifact@v4
+        with:
+          name: ModernNotepad-win-x64
+          path: artifacts/publish/win-x64

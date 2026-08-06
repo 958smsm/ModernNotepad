@@ -1,0 +1,16 @@
+application: Modern Notepad
+offline: true
+formats:
+  - txt
+  - rtf
+  - md
+  - yaml
+  - json
+  - xml
+unicode:
+  latin: "café — résumé"
+  arabic: "مرحبًا"
+  japanese: "こんにちは"
+analysis:
+  smart_coloring: false
+  duplicate_threshold: 3

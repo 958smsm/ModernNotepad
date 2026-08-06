@@ -1,0 +1,47 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.Core", "src\ModernNotepad.Core\ModernNotepad.Core.csproj", "{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.App", "src\ModernNotepad.App\ModernNotepad.App.csproj", "{CAAFD5DA-3301-43DD-9B22-2B531C498101}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.Tests", "tests\ModernNotepad.Tests\ModernNotepad.Tests.csproj", "{630D6058-94BE-4E69-BC1E-1588327F2C01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|ARM64 = Release|ARM64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|x64.ActiveCfg = Release|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|x64.Build.0 = Release|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{9A54BD3B-7DD7-4A79-B1D6-9DEB4DD45401}.Release|ARM64.Build.0 = Release|Any CPU
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|x64.ActiveCfg = Release|x64
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|x64.Build.0 = Release|x64
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|ARM64.ActiveCfg = Release|ARM64
+		{CAAFD5DA-3301-43DD-9B22-2B531C498101}.Release|ARM64.Build.0 = Release|ARM64
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|x64.ActiveCfg = Release|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|x64.Build.0 = Release|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|ARM64.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
