@@ -7,21 +7,37 @@ namespace ModernNotepad.Tests;
 public sealed class OpenAiGrammarAnalyzerTests
 {
     [TestMethod]
-    public void ParseAssignments_RequiresAndMapsEveryGrammarCategory()
+    public void CreateAiFallbackFinding_IncludesRootErrorAndTracebackPath()
+    {
+        var exception = new InvalidOperationException(
+            "outer",
+            new InvalidDataException("invalid model response"));
+
+        var finding = AnalysisCoordinator.CreateAiFallbackFinding(
+            exception,
+            @"C:\\logs\\ai-grammar-error.log");
+
+        StringAssert.Contains(finding.Message, "InvalidDataException: invalid model response");
+        StringAssert.Contains(finding.Message, @"C:\\logs\\ai-grammar-error.log");
+    }
+
+    [TestMethod]
+    public void ResolveApiKey_UsesProcessThenUserThenMachineEnvironmentValues()
+    {
+        Assert.AreEqual("process-key", OpenAiGrammarAnalyzer.ResolveApiKey(" process-key ", "user-key", "machine-key"));
+        Assert.AreEqual("user-key", OpenAiGrammarAnalyzer.ResolveApiKey(null, " user-key ", "machine-key"));
+        Assert.AreEqual("machine-key", OpenAiGrammarAnalyzer.ResolveApiKey(" ", null, " machine-key "));
+        Assert.IsNull(OpenAiGrammarAnalyzer.ResolveApiKey(null, " ", null));
+    }
+
+    [TestMethod]
+    public void ParseAssignments_RequiresAndMapsEveryToken()
     {
         const string response = """
         {
-          "SubjectNoun": [0],
-          "Verb": [1],
-          "ObjectNoun": [2],
-          "Adjective": [],
-          "Adverb": [],
-          "Pronoun": [],
-          "Preposition": [],
-          "Conjunction": [],
-          "Interrogative": [],
-          "Quantifier": [],
-          "Other": []
+          "0": "SubjectNoun",
+          "1": "Verb",
+          "2": "ObjectNoun"
         }
         """;
 
@@ -63,17 +79,8 @@ public sealed class OpenAiGrammarAnalyzerTests
     {
         const string response = """
         {
-          "SubjectNoun": [0],
-          "Verb": [0],
-          "ObjectNoun": [],
-          "Adjective": [],
-          "Adverb": [],
-          "Pronoun": [],
-          "Preposition": [],
-          "Conjunction": [],
-          "Interrogative": [],
-          "Quantifier": [],
-          "Other": []
+          "0": "SubjectNoun",
+          "0": "Verb"
         }
         """;
 

@@ -13,7 +13,7 @@ Current test groups:
 - **File operations**: UTF-8 BOM, Windows-1252, mixed CRLF/LF/CR preservation, special characters, and atomic replacement cleanup.
 - **Duplicate detection**: repeated words, stop-word behavior, strict mode, duplicate sentences, and configured thresholds.
 - **Text statistics**: word/character/sentence/paragraph counts, reading time, readability range, and grammar-category counts.
-- **AI grammar contract**: JSON category parsing, duplicate-token rejection, and mapping AI token classifications into the same `GrammarAnalysis` category-count/span structure as Traditional mode without making a network request.
+- **AI grammar contract**: token-to-category JSON parsing, duplicate-token rejection, and mapping AI token classifications into the same `GrammarAnalysis` category-count/span structure as Traditional mode without making a network request.
 - **Settings**: serialization round trip, corruption fallback/preservation, bounds normalization, and default color repair.
 - **Structured text**: strict JSON parsing (including comment rejection), JSON error positions/formatting, XML declaration-preserving formatting, and YAML tab-indentation warnings.
 

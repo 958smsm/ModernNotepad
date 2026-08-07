@@ -4,7 +4,9 @@ namespace ModernNotepad.Core.Analysis;
 
 public sealed class AnalysisCoordinator
 {
-    private const string AiFallbackFindingId = "grammar-analysis:ai-fallback";
+    public const string AiFallbackFindingId = "grammar-analysis:ai-fallback";
+    private const long MaxAiErrorLogBytes = 1_000_000;
+    private static readonly object AiErrorLogGate = new();
 
     private readonly GrammarColorAnalyzer _grammarAnalyzer = new();
     private readonly OpenAiGrammarAnalyzer _openAiGrammarAnalyzer = new();
@@ -44,7 +46,7 @@ public sealed class AnalysisCoordinator
         {
             throw;
         }
-        catch
+        catch (Exception exception)
         {
             // Keep the editor usable if credentials, connectivity, model access, or
             // model output are unavailable. The warning makes the fallback explicit.
@@ -53,11 +55,8 @@ public sealed class AnalysisCoordinator
                 input.Tokens,
                 input.Sentences,
                 cancellationToken);
-            providerFinding = new TextFinding(
-                AiFallbackFindingId,
-                FindingKind.Validation,
-                "AI grammar analysis was unavailable, so Logic & Traditional NLP was used for this pass. Check OPENAI_API_KEY, network access, and model availability.",
-                Severity: FindingSeverity.Warning);
+            var logPath = TryWriteAiErrorLog(exception);
+            providerFinding = CreateAiFallbackFinding(exception, logPath);
         }
 
         return await Task.Run(
@@ -97,6 +96,86 @@ public sealed class AnalysisCoordinator
         TextTokenizer.Tokenize(text, cancellationToken),
         TextSegmentation.GetSentences(text, cancellationToken),
         TextSegmentation.GetParagraphs(text, cancellationToken));
+    internal static TextFinding CreateAiFallbackFinding(Exception exception, string? logPath)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+
+        var rootCause = exception.GetBaseException();
+        var error = $"{rootCause.GetType().Name}: {rootCause.Message}";
+        if (error.Length > 1_200)
+        {
+            error = error[..1_200] + "…";
+        }
+
+        var diagnosticLocation = string.IsNullOrWhiteSpace(logPath)
+            ? "The full traceback log could not be written."
+            : $"Full traceback log:\n{logPath}";
+
+        return new TextFinding(
+            AiFallbackFindingId,
+            FindingKind.Validation,
+            "AI grammar analysis failed, so Logic & Traditional NLP is being used for this pass." +
+            $"\n\nError: {error}\n\n{diagnosticLocation}",
+            Severity: FindingSeverity.Warning);
+    }
+
+    private static string? TryWriteAiErrorLog(Exception exception)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ModernNotepad");
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, "ai-grammar-error.log");
+            var details = RedactKnownApiKeys(exception.ToString());
+            var entry = $"{DateTimeOffset.Now:O}{Environment.NewLine}{details}{Environment.NewLine}{Environment.NewLine}";
+
+            lock (AiErrorLogGate)
+            {
+                if (File.Exists(path) && new FileInfo(path).Length >= MaxAiErrorLogBytes)
+                {
+                    File.WriteAllText(path, string.Empty);
+                }
+
+                File.AppendAllText(path, entry);
+            }
+
+            return path;
+        }
+        catch
+        {
+            // Diagnostics must never prevent the local grammar fallback.
+            return null;
+        }
+    }
+
+    private static string RedactKnownApiKeys(string details)
+    {
+        foreach (var target in new[]
+                 {
+                     EnvironmentVariableTarget.Process,
+                     EnvironmentVariableTarget.User,
+                     EnvironmentVariableTarget.Machine
+                 })
+        {
+            try
+            {
+                var key = Environment.GetEnvironmentVariable("OPENAI_API_KEY", target);
+                if (!string.IsNullOrWhiteSpace(key))
+                {
+                    details = details.Replace(key, "[REDACTED]", StringComparison.Ordinal);
+                }
+            }
+            catch
+            {
+                // A restricted environment scope should not block error reporting.
+            }
+        }
+
+        return details;
+    }
 
     private DocumentAnalysis CompleteAnalysis(
         string text,
@@ -144,7 +223,8 @@ public sealed class AnalysisCoordinator
         }
 
         var filteredFindings = findings
-            .Where(finding => !settings.IgnoredWarningIds.Contains(finding.Id))
+            .Where(finding => finding.Id == AiFallbackFindingId
+                || !settings.IgnoredWarningIds.Contains(finding.Id))
             .GroupBy(finding => finding.Id)
             .Select(group => group.First())
             .OrderBy(finding => finding.Span?.Start ?? int.MaxValue)

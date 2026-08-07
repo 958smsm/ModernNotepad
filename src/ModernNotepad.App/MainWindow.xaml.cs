@@ -49,6 +49,7 @@ public partial class MainWindow : Window
     private bool _autoSaveRunning;
     private bool _allowWindowClose;
     private bool _windowCloseInProgress;
+    private bool _aiGrammarUnavailableMessageShown;
     private bool _updatingFormatControls;
     private bool _updatingFeatureToggles;
     private int _busyDepth;
@@ -1091,7 +1092,9 @@ public partial class MainWindow : Window
 
         OperationStatusText.Text = "Analyzing…";
         await ActiveView.AnalyzeNowAsync();
-        OperationStatusText.Text = "Analysis updated";
+        OperationStatusText.Text = HasAiGrammarFallback(ActiveSession)
+            ? "AI grammar unavailable - using local analysis"
+            : "Analysis updated";
     }
 
     private void DocumentCommand_CanExecute(object sender, CanExecuteRoutedEventArgs e) =>
@@ -1575,8 +1578,40 @@ public partial class MainWindow : Window
             SmartPanel.DataContext = ActiveSession;
             UpdateStatusBar();
             UpdateGrammarCounts();
+            ShowAiGrammarUnavailableIfNeeded();
         }
     }
+
+    private void ShowAiGrammarUnavailableIfNeeded()
+    {
+        var fallback = GetAiGrammarFallback(ActiveSession);
+        if (fallback is null)
+        {
+            _aiGrammarUnavailableMessageShown = false;
+            return;
+        }
+
+        OperationStatusText.Text = "AI grammar unavailable - using local analysis";
+        if (_aiGrammarUnavailableMessageShown)
+        {
+            return;
+        }
+
+        _aiGrammarUnavailableMessageShown = true;
+        MessageBox.Show(
+            this,
+            fallback.Message,
+            "AI grammar analysis unavailable",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+    }
+
+    private static bool HasAiGrammarFallback(DocumentSession? session) =>
+        GetAiGrammarFallback(session) is not null;
+
+    private static TextFinding? GetAiGrammarFallback(DocumentSession? session) =>
+        session?.Findings.FirstOrDefault(finding =>
+            finding.Id == AnalysisCoordinator.AiFallbackFindingId);
 
     private async void RecentFile_Click(object sender, RoutedEventArgs e)
     {

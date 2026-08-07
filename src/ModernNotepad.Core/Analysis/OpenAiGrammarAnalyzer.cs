@@ -13,6 +13,7 @@ public sealed class OpenAiGrammarAnalyzer
     public const string Model = "gpt-5.4-mini";
     private const int TokensPerRequest = 500;
     private const int ContextTokens = 24;
+    private const int MaxResponseAttempts = 2;
 
     private static readonly GrammarCategory[] Categories = Enum.GetValues<GrammarCategory>();
     private static readonly HashSet<string> CategoryNames = Categories
@@ -33,7 +34,10 @@ public sealed class OpenAiGrammarAnalyzer
             return new GrammarAnalysis(Array.Empty<ColoredSpan>(), counts);
         }
 
-        var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var apiKey = ResolveApiKey(
+            Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Process),
+            Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.User),
+            Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine));
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             throw new InvalidOperationException(
@@ -49,18 +53,39 @@ public sealed class OpenAiGrammarAnalyzer
             var count = Math.Min(TokensPerRequest, tokens.Count - start);
             var prompt = BuildPrompt(text, tokens, start, count);
 
-            CreateResponseOptions options = new()
+            IReadOnlyDictionary<int, GrammarCategory>? batch = null;
+            InvalidDataException? lastValidationError = null;
+            for (var attempt = 1; attempt <= MaxResponseAttempts; attempt++)
             {
-                Model = Model
-            };
-            options.InputItems.Add(ResponseItem.CreateUserMessageItem(prompt));
+                CreateResponseOptions options = new()
+                {
+                    Model = Model
+                };
+                options.InputItems.Add(ResponseItem.CreateUserMessageItem(prompt));
 
-            // OpenAI 2.12.0 exposes this Responses API shape. Cancellation is still
-            // checked before and after each request so stale editor results are discarded.
-            ResponseResult response = await client.CreateResponseAsync(options).ConfigureAwait(false);
-            cancellationToken.ThrowIfCancellationRequested();
+                // OpenAI 2.12.0 exposes this Responses API shape. Cancellation is still
+                // checked before and after each request so stale editor results are discarded.
+                ResponseResult response = await client.CreateResponseAsync(options).ConfigureAwait(false);
+                cancellationToken.ThrowIfCancellationRequested();
 
-            var batch = ParseAssignments(response.GetOutputText(), start, count);
+                try
+                {
+                    batch = ParseAssignments(response.GetOutputText(), start, count);
+                    break;
+                }
+                catch (InvalidDataException exception) when (attempt < MaxResponseAttempts)
+                {
+                    lastValidationError = exception;
+                }
+            }
+
+            if (batch is null)
+            {
+                throw new InvalidDataException(
+                    $"AI grammar analysis did not return a valid token map after {MaxResponseAttempts} attempts.",
+                    lastValidationError);
+            }
+
             foreach (var pair in batch)
             {
                 assignments[pair.Key] = pair.Value;
@@ -69,6 +94,14 @@ public sealed class OpenAiGrammarAnalyzer
 
         return CreateAnalysis(tokens, assignments, cancellationToken);
     }
+
+    internal static string? ResolveApiKey(
+        string? processValue,
+        string? userValue,
+        string? machineValue) =>
+        new[] { processValue, userValue, machineValue }
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value))
+            ?.Trim();
 
     internal static GrammarAnalysis CreateAnalysis(
         IReadOnlyList<TextToken> tokens,
@@ -172,9 +205,9 @@ Allowed categories, exactly as written:
 - Quantifier: articles, determiners, and quantifiers
 - Other: a target token that genuinely fits none of the categories above
 
-Return JSON only. Return exactly one object with these eleven keys:
-{"SubjectNoun":[],"Verb":[],"ObjectNoun":[],"Adjective":[],"Adverb":[],"Pronoun":[],"Preposition":[],"Conjunction":[],"Interrogative":[],"Quantifier":[],"Other":[]}
-Each array must contain token IDs only. Every target ID from {{batchStart}} through {{lastId}} must appear exactly once across all arrays. Do not include IDs outside that range. Do not add prose or Markdown.
+Return JSON only as one token-to-category object. Each property name must be a target token ID and each value must be one allowed category.
+Example: {"{{batchStart}}":"SubjectNoun"}
+Every target ID from {{batchStart}} through {{lastId}} must appear exactly once. Do not include IDs outside that range. Do not add prose or Markdown.
 
 SOURCE TEXT:
 {{annotated}}
@@ -200,45 +233,33 @@ SOURCE TEXT:
 
         var expectedEndExclusive = checked(expectedStart + expectedCount);
         var result = new Dictionary<int, GrammarCategory>(expectedCount);
-        var seenCategories = new HashSet<GrammarCategory>();
         foreach (var property in document.RootElement.EnumerateObject())
         {
-            if (!CategoryNames.Contains(property.Name)
-                || !Enum.TryParse<GrammarCategory>(property.Name, ignoreCase: true, out var category))
+            if (!int.TryParse(property.Name, out var tokenId)
+                || tokenId < expectedStart
+                || tokenId >= expectedEndExclusive)
             {
-                throw new InvalidDataException($"AI grammar analysis returned unknown category '{property.Name}'.");
+                throw new InvalidDataException($"AI grammar analysis returned invalid token ID '{property.Name}'.");
             }
 
-            if (!seenCategories.Add(category))
+            if (property.Value.ValueKind != JsonValueKind.String)
             {
-                throw new InvalidDataException($"AI grammar category '{property.Name}' was returned more than once.");
+                throw new InvalidDataException($"AI grammar analysis returned a non-text category for token {tokenId}.");
             }
 
-            if (property.Value.ValueKind != JsonValueKind.Array)
+            var categoryName = property.Value.GetString();
+            if (categoryName is null
+                || !CategoryNames.Contains(categoryName)
+                || !Enum.TryParse<GrammarCategory>(categoryName, ignoreCase: true, out var category))
             {
-                throw new InvalidDataException($"AI grammar category '{property.Name}' must be an array.");
+                throw new InvalidDataException(
+                    $"AI grammar analysis returned unknown category '{categoryName}' for token {tokenId}.");
             }
 
-            foreach (var item in property.Value.EnumerateArray())
+            if (!result.TryAdd(tokenId, category))
             {
-                if (!item.TryGetInt32(out var tokenId)
-                    || tokenId < expectedStart
-                    || tokenId >= expectedEndExclusive)
-                {
-                    throw new InvalidDataException("AI grammar analysis returned an invalid token ID.");
-                }
-
-                if (!result.TryAdd(tokenId, category))
-                {
-                    throw new InvalidDataException($"AI grammar analysis classified token {tokenId} more than once.");
-                }
+                throw new InvalidDataException($"AI grammar analysis returned token {tokenId} more than once.");
             }
-        }
-
-        if (seenCategories.Count != Categories.Length)
-        {
-            throw new InvalidDataException(
-                $"AI grammar analysis returned {seenCategories.Count} of {Categories.Length} grammar categories.");
         }
 
         if (result.Count != expectedCount)

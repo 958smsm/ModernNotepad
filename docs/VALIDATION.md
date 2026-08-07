@@ -31,7 +31,7 @@ The Traditional/AI grammar-mode change received an additional static validation 
 
 - `MainWindow.xaml`, `SettingsWindow.xaml`, project files, and central package props parse as XML.
 - New XAML names/event wiring were checked against the code-behind (`GrammarAnalysisMode_Click` and the named mode controls).
-- The AI adapter validates all eleven `GrammarCategory` keys, requires every requested token ID exactly once, and maps IDs back to the existing `GrammarAnalysis` spans/counts contract.
+- The AI adapter validates a token-to-category JSON map, requires every requested token ID exactly once, rejects unknown categories, and maps IDs back to the existing `GrammarAnalysis` spans/counts contract.
 - No-network unit tests were added for AI response parsing, duplicate-token rejection, and the shared grammar-output contract.
 - Settings round-trip coverage now includes the persisted grammar mode.
 
