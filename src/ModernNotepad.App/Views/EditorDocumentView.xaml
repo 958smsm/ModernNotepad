@@ -4,75 +4,8 @@
              Loaded="UserControl_Loaded"
              Unloaded="UserControl_Unloaded">
     <Grid Background="{DynamicResource EditorBackgroundBrush}">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-
-        <Border x:Name="FindBar"
-                Grid.Row="0"
-                Background="{DynamicResource SurfaceAltBrush}"
-                BorderBrush="{DynamicResource BorderBrush}"
-                BorderThickness="0,0,0,1"
-                Padding="8"
-                Visibility="Collapsed">
-            <DockPanel LastChildFill="True">
-                <Button DockPanel.Dock="Right"
-                        Style="{StaticResource ToolbarButtonStyle}"
-                        Content="✕"
-                        ToolTip="Close find bar (Esc)"
-                        AutomationProperties.Name="Close find bar"
-                        Click="CloseFindBar_Click" />
-                <WrapPanel VerticalAlignment="Center">
-                    <TextBlock Margin="4,0,4,0" VerticalAlignment="Center" Text="Find" />
-                    <TextBox x:Name="FindTextBox"
-                             Width="200"
-                             AutomationProperties.Name="Find text"
-                             TextChanged="FindTextBox_TextChanged"
-                             KeyDown="FindTextBox_KeyDown" />
-                    <TextBlock x:Name="ReplaceLabel"
-                               Margin="12,0,4,0"
-                               VerticalAlignment="Center"
-                               Text="Replace"
-                               Visibility="Collapsed" />
-                    <TextBox x:Name="ReplaceTextBox"
-                             Width="180"
-                             AutomationProperties.Name="Replacement text"
-                             KeyDown="ReplaceTextBox_KeyDown"
-                             Visibility="Collapsed" />
-                    <CheckBox x:Name="MatchCaseCheckBox"
-                              Margin="10,0,6,0"
-                              VerticalAlignment="Center"
-                              Content="Match case"
-                              AutomationProperties.Name="Match case" />
-                    <Button Style="{StaticResource ToolbarButtonStyle}"
-                            Content="↑"
-                            ToolTip="Find previous"
-                            AutomationProperties.Name="Find previous"
-                            Click="FindPrevious_Click" />
-                    <Button Style="{StaticResource ToolbarButtonStyle}"
-                            Content="↓"
-                            ToolTip="Find next"
-                            AutomationProperties.Name="Find next"
-                            Click="FindNext_Click" />
-                    <Button x:Name="ReplaceButton"
-                            Content="Replace"
-                            Visibility="Collapsed"
-                            Click="Replace_Click" />
-                    <Button x:Name="ReplaceAllButton"
-                            Content="Replace all"
-                            Visibility="Collapsed"
-                            Click="ReplaceAll_Click" />
-                    <TextBlock x:Name="FindStatusText"
-                               Margin="8,0,0,0"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource MutedTextBrush}" />
-                </WrapPanel>
-            </DockPanel>
-        </Border>
-
+        <!-- Editor fills the full area -->
         <RichTextBox x:Name="Editor"
-                     Grid.Row="1"
                      AcceptsReturn="True"
                      AcceptsTab="True"
                      AllowDrop="False"
@@ -94,5 +27,92 @@
                      SelectionChanged="Editor_SelectionChanged"
                      PreviewMouseWheel="Editor_PreviewMouseWheel"
                      PreviewKeyDown="Editor_PreviewKeyDown" />
+
+        <!-- ════════════════════════════════════════════════════════════
+             Floating Find Bar — top-right overlay (VS Code style)
+             ════════════════════════════════════════════════════════════ -->
+        <Border x:Name="FindBar"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Margin="0,8,18,0"
+                MinWidth="380"
+                MaxWidth="520"
+                Visibility="Collapsed"
+                Style="{StaticResource FloatingOverlayStyle}">
+            <StackPanel>
+                <!-- Find row -->
+                <DockPanel>
+                    <Button DockPanel.Dock="Right"
+                            Style="{StaticResource ToolbarButtonStyle}"
+                            Content="✕"
+                            FontSize="12"
+                            Width="28" Height="28" MinWidth="28"
+                            ToolTip="Close find bar (Esc)"
+                            AutomationProperties.Name="Close find bar"
+                            Click="CloseFindBar_Click" />
+                    <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" Margin="4,0">
+                        <Button Style="{StaticResource ToolbarButtonStyle}"
+                                Content="▲"
+                                FontSize="11"
+                                Width="28" Height="28" MinWidth="28"
+                                ToolTip="Find previous"
+                                AutomationProperties.Name="Find previous"
+                                Click="FindPrevious_Click" />
+                        <Button Style="{StaticResource ToolbarButtonStyle}"
+                                Content="▼"
+                                FontSize="11"
+                                Width="28" Height="28" MinWidth="28"
+                                ToolTip="Find next"
+                                AutomationProperties.Name="Find next"
+                                Click="FindNext_Click" />
+                    </StackPanel>
+                    <TextBox x:Name="FindTextBox"
+                             AutomationProperties.Name="Find text"
+                             TextChanged="FindTextBox_TextChanged"
+                             KeyDown="FindTextBox_KeyDown" />
+                </DockPanel>
+
+                <!-- Replace row (conditionally visible) -->
+                <DockPanel x:Name="ReplaceRow" Margin="0,6,0,0" Visibility="Collapsed">
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Margin="4,0">
+                        <Button x:Name="ReplaceButton"
+                                Style="{StaticResource ToolbarButtonStyle}"
+                                Content="⇄"
+                                FontSize="13"
+                                Width="28" Height="28" MinWidth="28"
+                                ToolTip="Replace"
+                                AutomationProperties.Name="Replace"
+                                Click="Replace_Click" />
+                        <Button x:Name="ReplaceAllButton"
+                                Style="{StaticResource ToolbarButtonStyle}"
+                                Content="⇄∀"
+                                FontSize="11"
+                                Width="28" Height="28" MinWidth="28"
+                                ToolTip="Replace all"
+                                AutomationProperties.Name="Replace all"
+                                Click="ReplaceAll_Click" />
+                        <!-- Spacer to align with close button above -->
+                        <Border Width="28" />
+                    </StackPanel>
+                    <TextBox x:Name="ReplaceTextBox"
+                             AutomationProperties.Name="Replacement text"
+                             KeyDown="ReplaceTextBox_KeyDown" />
+                </DockPanel>
+
+                <!-- Options row -->
+                <DockPanel Margin="0,8,0,0">
+                    <TextBlock x:Name="FindStatusText"
+                               DockPanel.Dock="Right"
+                               VerticalAlignment="Center"
+                               FontSize="12"
+                               Foreground="{DynamicResource MutedTextBrush}" />
+                    <CheckBox x:Name="MatchCaseCheckBox"
+                              VerticalAlignment="Center"
+                              Content="Match case"
+                              FontSize="12"
+                              AutomationProperties.Name="Match case" />
+                </DockPanel>
+            </StackPanel>
+        </Border>
     </Grid>
 </UserControl>

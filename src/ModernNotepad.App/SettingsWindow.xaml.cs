@@ -89,6 +89,19 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void SettingsNav_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (GeneralPage is null || AppearancePage is null || SmartFeaturesPage is null)
+        {
+            return;
+        }
+
+        var tag = (SettingsNavList.SelectedItem as ListBoxItem)?.Tag as string ?? "General";
+        GeneralPage.Visibility = tag == "General" ? Visibility.Visible : Visibility.Collapsed;
+        AppearancePage.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
+        SmartFeaturesPage.Visibility = tag == "Smart" ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private static string GetGrammarColor(AppSettings settings, GrammarCategory category) =>
         settings.GrammarColors.TryGetValue(category, out var color) ? color : "#667085";
 

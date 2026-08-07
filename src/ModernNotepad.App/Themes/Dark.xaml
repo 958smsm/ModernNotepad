@@ -1,19 +1,31 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Color x:Key="WindowBackgroundColor">#171A21</Color>
-    <Color x:Key="SurfaceColor">#20242D</Color>
-    <Color x:Key="SurfaceAltColor">#292E39</Color>
-    <Color x:Key="EditorBackgroundColor">#1B1F27</Color>
-    <Color x:Key="TextColor">#F2F4F7</Color>
-    <Color x:Key="MutedTextColor">#AAB2C0</Color>
-    <Color x:Key="BorderColor">#3A414E</Color>
-    <Color x:Key="HoverColor">#303744</Color>
-    <Color x:Key="SelectedColor">#344B7B</Color>
-    <Color x:Key="StatusBarColor">#20242D</Color>
+    <!-- ───────────────────────────────────────────────
+         Base surfaces — proper layering with clear steps
+         Window < Editor < Surface < SurfaceAlt < Elevated
+         ─────────────────────────────────────────────── -->
+    <Color x:Key="WindowBackgroundColor">#111318</Color>
+    <Color x:Key="SurfaceColor">#191C24</Color>
+    <Color x:Key="SurfaceAltColor">#1F2330</Color>
+    <Color x:Key="SurfaceElevatedColor">#272B3B</Color>
+    <Color x:Key="EditorBackgroundColor">#14161E</Color>
 
+    <!-- ─── Text — high contrast primary, readable muted ─── -->
+    <Color x:Key="TextColor">#E8ECF4</Color>
+    <Color x:Key="MutedTextColor">#9BA3B8</Color>
+
+    <!-- ─── Chrome — visible borders, noticeable hover ─── -->
+    <Color x:Key="BorderColor">#363D50</Color>
+    <Color x:Key="HoverColor">#2C3346</Color>
+    <Color x:Key="SelectedColor">#33406A</Color>
+    <Color x:Key="StatusBarColor">#15171F</Color>
+    <Color x:Key="FocusRingColor">#6B8AFF</Color>
+
+    <!-- ═══ Brush definitions ═══ -->
     <SolidColorBrush x:Key="WindowBackgroundBrush" Color="{StaticResource WindowBackgroundColor}" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}" />
     <SolidColorBrush x:Key="SurfaceAltBrush" Color="{StaticResource SurfaceAltColor}" />
+    <SolidColorBrush x:Key="SurfaceElevatedBrush" Color="{StaticResource SurfaceElevatedColor}" />
     <SolidColorBrush x:Key="EditorBackgroundBrush" Color="{StaticResource EditorBackgroundColor}" />
     <SolidColorBrush x:Key="TextBrush" Color="{StaticResource TextColor}" />
     <SolidColorBrush x:Key="MutedTextBrush" Color="{StaticResource MutedTextColor}" />
@@ -21,10 +33,35 @@
     <SolidColorBrush x:Key="HoverBrush" Color="{StaticResource HoverColor}" />
     <SolidColorBrush x:Key="SelectedBrush" Color="{StaticResource SelectedColor}" />
     <SolidColorBrush x:Key="StatusBarBrush" Color="{StaticResource StatusBarColor}" />
-    <SolidColorBrush x:Key="ErrorBrush" Color="#FDA29B" />
-    <SolidColorBrush x:Key="WarningBrush" Color="#FEC84B" />
-    <SolidColorBrush x:Key="SuccessBrush" Color="#6CE9A6" />
-    <SolidColorBrush x:Key="AccentBrush" Color="#7C9BFF" />
-    <SolidColorBrush x:Key="AccentHoverBrush" Color="#9AB2FF" />
-    <SolidColorBrush x:Key="AccentMutedBrush" Color="#337C9BFF" />
+    <SolidColorBrush x:Key="FocusRingBrush" Color="{StaticResource FocusRingColor}" />
+
+    <!-- ─── Semantic colors ─── -->
+    <SolidColorBrush x:Key="ErrorBrush" Color="#F97066" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FDB022" />
+    <SolidColorBrush x:Key="SuccessBrush" Color="#47D18C" />
+    <SolidColorBrush x:Key="ErrorSubtleBrush" Color="#18F97066" />
+    <SolidColorBrush x:Key="WarningSubtleBrush" Color="#18FDB022" />
+    <SolidColorBrush x:Key="SuccessSubtleBrush" Color="#1847D18C" />
+
+    <!-- ─── Accent — softer blue-violet, less electric ─── -->
+    <SolidColorBrush x:Key="AccentBrush" Color="#7B93F5" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#95AAFF" />
+    <SolidColorBrush x:Key="AccentMutedBrush" Color="#287B93F5" />
+    <SolidColorBrush x:Key="AccentGlowBrush" Color="#147B93F5" />
+
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#7B93F5" Offset="0" />
+        <GradientStop Color="#9B7FE8" Offset="1" />
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="StatusBarGradientBorderBrush" StartPoint="0,0" EndPoint="1,0">
+        <GradientStop Color="#363D50" Offset="0" />
+        <GradientStop Color="#454E65" Offset="0.5" />
+        <GradientStop Color="#363D50" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- ─── Status dot colors ─── -->
+    <SolidColorBrush x:Key="StatusSavedBrush" Color="#47D18C" />
+    <SolidColorBrush x:Key="StatusUnsavedBrush" Color="#FDB022" />
+    <SolidColorBrush x:Key="StatusFailedBrush" Color="#F97066" />
 </ResourceDictionary>

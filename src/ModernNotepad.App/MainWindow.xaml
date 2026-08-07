@@ -58,6 +58,9 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- ════════════════════════════════════════════════════════════
+             Menu Bar
+             ════════════════════════════════════════════════════════════ -->
         <Menu Grid.Row="0" AutomationProperties.Name="Application menu">
             <MenuItem Header="_File">
                 <MenuItem Header="_New" Command="{x:Static commands:AppCommands.NewDocument}" />
@@ -127,22 +130,30 @@
             </MenuItem>
         </Menu>
 
-        <ToolBarTray Grid.Row="1" Background="{DynamicResource SurfaceBrush}">
+        <!-- ════════════════════════════════════════════════════════════
+             Toolbar — icon-style buttons with Unicode glyphs
+             ════════════════════════════════════════════════════════════ -->
+        <ToolBarTray Grid.Row="1" Background="{DynamicResource SurfaceAltBrush}">
             <ToolBar Band="0" BandIndex="0" AutomationProperties.Name="Formatting toolbar">
+                <!-- File operations -->
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="New"
+                        Content="📄"
                         ToolTip="New document (Ctrl+N)"
+                        AutomationProperties.Name="New document"
                         Command="{x:Static commands:AppCommands.NewDocument}" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="Open"
+                        Content="📂"
                         ToolTip="Open (Ctrl+O)"
+                        AutomationProperties.Name="Open file"
                         Command="{x:Static commands:AppCommands.Open}" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="Save"
+                        Content="💾"
                         ToolTip="Save (Ctrl+S)"
+                        AutomationProperties.Name="Save file"
                         Command="{x:Static commands:AppCommands.Save}" />
                 <Separator />
 
+                <!-- Font controls -->
                 <ComboBox x:Name="FontFamilyCombo"
                           Width="165"
                           IsEditable="True"
@@ -161,108 +172,130 @@
                           LostKeyboardFocus="FontSizeCombo_LostKeyboardFocus"
                           KeyDown="FontSizeCombo_KeyDown" />
 
+                <!-- Text formatting -->
                 <ToggleButton x:Name="BoldButton"
-                              Content="B"
-                              FontWeight="Bold"
                               ToolTip="Bold (Ctrl+B)"
                               AutomationProperties.Name="Bold"
-                              Click="Bold_Click" />
+                              Click="Bold_Click">
+                    <TextBlock Text="B" FontWeight="Bold" FontSize="14" Foreground="{DynamicResource TextBrush}" />
+                </ToggleButton>
                 <ToggleButton x:Name="ItalicButton"
-                              Content="I"
-                              FontStyle="Italic"
                               ToolTip="Italic (Ctrl+I)"
                               AutomationProperties.Name="Italic"
-                              Click="Italic_Click" />
+                              Click="Italic_Click">
+                    <TextBlock Text="I" FontStyle="Italic" FontSize="14" FontFamily="Georgia" Foreground="{DynamicResource TextBrush}" />
+                </ToggleButton>
                 <ToggleButton x:Name="UnderlineButton"
                               ToolTip="Underline (Ctrl+U)"
                               AutomationProperties.Name="Underline"
                               Click="Underline_Click">
-                    <TextBlock Text="U" TextDecorations="Underline" />
+                    <TextBlock Text="U" TextDecorations="Underline" FontSize="14" Foreground="{DynamicResource TextBrush}" />
                 </ToggleButton>
                 <ToggleButton x:Name="StrikethroughButton"
                               ToolTip="Strikethrough"
                               AutomationProperties.Name="Strikethrough"
                               Click="Strikethrough_Click">
-                    <TextBlock Text="S" TextDecorations="Strikethrough" />
+                    <TextBlock Text="S" TextDecorations="Strikethrough" FontSize="14" Foreground="{DynamicResource TextBrush}" />
                 </ToggleButton>
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="A▾"
                         ToolTip="Text color"
                         AutomationProperties.Name="Text color"
-                        Click="TextColor_Click" />
+                        Click="TextColor_Click">
+                    <StackPanel>
+                        <TextBlock Text="A" FontWeight="SemiBold" FontSize="14" HorizontalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+                        <Border Height="3" Width="16" CornerRadius="1" Margin="0,-1,0,0"
+                                Background="{DynamicResource AccentBrush}" />
+                    </StackPanel>
+                </Button>
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="▰▾"
                         ToolTip="Highlight color"
                         AutomationProperties.Name="Highlight color"
-                        Click="HighlightColor_Click" />
+                        Click="HighlightColor_Click">
+                    <StackPanel>
+                        <TextBlock Text="🖊" FontSize="13" HorizontalAlignment="Center" Foreground="{DynamicResource TextBrush}" />
+                        <Border Height="3" Width="16" CornerRadius="1" Margin="0,-1,0,0"
+                                Background="{DynamicResource WarningBrush}" />
+                    </StackPanel>
+                </Button>
                 <Separator />
 
+                <!-- Alignment & lists -->
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="≡L"
+                        Content="☰"
                         ToolTip="Align left"
                         AutomationProperties.Name="Align left"
                         Click="AlignLeft_Click" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="≡C"
                         ToolTip="Align center"
                         AutomationProperties.Name="Align center"
-                        Click="AlignCenter_Click" />
+                        Click="AlignCenter_Click">
+                    <TextBlock Text="≡" FontSize="16" Foreground="{DynamicResource TextBrush}" />
+                </Button>
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="≡R"
                         ToolTip="Align right"
                         AutomationProperties.Name="Align right"
-                        Click="AlignRight_Click" />
+                        Click="AlignRight_Click">
+                    <TextBlock Text="▤" FontSize="14" Foreground="{DynamicResource TextBrush}" />
+                </Button>
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="• List"
+                        Content="• ≡"
                         ToolTip="Bulleted list"
                         AutomationProperties.Name="Bulleted list"
                         Click="Bullets_Click" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="1. List"
+                        Content="1.≡"
                         ToolTip="Numbered list"
                         AutomationProperties.Name="Numbered list"
                         Click="Numbering_Click" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="←"
+                        Content="⇤"
                         ToolTip="Decrease indentation"
                         AutomationProperties.Name="Decrease indentation"
                         Click="DecreaseIndent_Click" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="→"
+                        Content="⇥"
                         ToolTip="Increase indentation"
                         AutomationProperties.Name="Increase indentation"
                         Click="IncreaseIndent_Click" />
                 <Button Style="{StaticResource ToolbarButtonStyle}"
-                        Content="Clear"
+                        Content="⌧"
                         ToolTip="Clear formatting"
                         AutomationProperties.Name="Clear formatting"
                         Click="ClearFormatting_Click" />
                 <Separator />
 
+                <!-- Feature toggles -->
                 <ToggleButton x:Name="SmartColorToggle"
-                              Content="Smart color"
                               ToolTip="Toggle grammatical coloring"
                               AutomationProperties.Name="Smart Coloring"
-                              Click="SmartColoring_Click" />
+                              Click="SmartColoring_Click">
+                    <TextBlock Text="🎨 Color" Foreground="{DynamicResource TextBrush}" />
+                </ToggleButton>
                 <ToggleButton x:Name="DuplicateToggle"
-                              Content="Duplicates"
                               ToolTip="Toggle duplicate detection"
                               AutomationProperties.Name="Duplicate detection"
-                              Click="DuplicateDetection_Click" />
+                              Click="DuplicateDetection_Click">
+                    <TextBlock Text="🔍 Dupes" Foreground="{DynamicResource TextBrush}" />
+                </ToggleButton>
                 <ToggleButton x:Name="DarkModeToggle"
-                              Content="Dark"
                               ToolTip="Toggle dark mode"
                               AutomationProperties.Name="Dark mode"
-                              Click="DarkMode_Click" />
+                              Click="DarkMode_Click">
+                    <TextBlock Text="🌙" Foreground="{DynamicResource TextBrush}" />
+                </ToggleButton>
             </ToolBar>
         </ToolBarTray>
 
+        <!-- ════════════════════════════════════════════════════════════
+             Main content area: Editor + Smart Panel
+             ════════════════════════════════════════════════════════════ -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" MinWidth="360" />
                 <ColumnDefinition x:Name="SmartPanelColumn" Width="320" MinWidth="0" />
             </Grid.ColumnDefinitions>
 
+            <!-- Editor area with tab control -->
             <Border Grid.Column="0"
                     Background="{DynamicResource SurfaceBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
@@ -296,79 +329,161 @@
                 </TabControl>
             </Border>
 
+            <!-- ════════════════════════════════════════════════════════
+                 Smart Writing Panel — redesigned with card layout
+                 ════════════════════════════════════════════════════════ -->
             <Border x:Name="SmartPanel"
                     Grid.Column="1"
                     Background="{DynamicResource SurfaceAltBrush}"
                     BorderBrush="{DynamicResource BorderBrush}"
                     BorderThickness="1,0,0,0"
-                    Padding="14">
+                    Padding="14,10">
                 <ScrollViewer VerticalScrollBarVisibility="Auto"
                               HorizontalScrollBarVisibility="Disabled">
                     <StackPanel>
-                        <DockPanel>
+                        <!-- Panel header with accent gradient bar -->
+                        <DockPanel Margin="0,4,0,2">
                             <Button DockPanel.Dock="Right"
                                     Style="{StaticResource ToolbarButtonStyle}"
-                                    Content="×"
+                                    Content="✕"
+                                    FontSize="13"
                                     ToolTip="Hide smart-writing panel"
                                     AutomationProperties.Name="Hide smart-writing panel"
                                     Click="HideSmartPanel_Click" />
-                            <TextBlock FontSize="18"
-                                       FontWeight="SemiBold"
-                                       Text="Writing assistant" />
+                            <StackPanel>
+                                <TextBlock FontSize="17"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextBrush}"
+                                           Text="✨ Writing Assistant" />
+                                <Border Height="2.5" CornerRadius="1.5" Margin="0,6,40,0"
+                                        HorizontalAlignment="Left" Width="110">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                            <GradientStop Color="{DynamicResource FocusRingColor}" Offset="0" />
+                                            <GradientStop Color="#A78BFA" Offset="1" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                            </StackPanel>
                         </DockPanel>
-                        <TextBlock Margin="0,3,0,10"
+                        <TextBlock Margin="0,6,0,12"
                                    Foreground="{DynamicResource MutedTextBrush}"
                                    TextWrapping="Wrap"
+                                   FontSize="12"
                                    Text="Optional, offline analysis. Findings never block typing." />
 
+                        <!-- ─── Document Statistics ─── -->
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Document statistics" />
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Text="Words" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.WordCount}" />
-                            <TextBlock Grid.Row="1" Text="Characters" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.CharacterCount}" />
-                            <TextBlock Grid.Row="2" Text="Sentences" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.SentenceCount}" />
-                            <TextBlock Grid.Row="3" Text="Paragraphs" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="3" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.ParagraphCount}" />
-                            <TextBlock Grid.Row="4" Text="Reading time" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="4" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.ReadingTimeMinutes, StringFormat={}{0:0.0} min}" />
-                            <TextBlock Grid.Row="5" Text="Readability" Foreground="{DynamicResource MutedTextBrush}" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" FontWeight="SemiBold" Text="{Binding Statistics.ReadabilityScore, StringFormat={}{0:0.0}}" />
-                        </Grid>
 
+                        <!-- Stat pills in a 3×2 grid -->
+                        <UniformGrid Columns="3" Margin="0,0,0,4">
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Words" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.WordCount}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Chars" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.CharacterCount}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Sentences" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.SentenceCount}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Paragraphs" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.ParagraphCount}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Read time" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.ReadingTimeMinutes, StringFormat={}{0:0.0}m}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource StatPillStyle}">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="Readability" FontSize="11"
+                                               Foreground="{DynamicResource MutedTextBrush}"
+                                               HorizontalAlignment="Center" />
+                                    <TextBlock FontSize="18" FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               Foreground="{DynamicResource TextBrush}"
+                                               Text="{Binding Statistics.ReadabilityScore, StringFormat={}{0:0.0}}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+
+                        <!-- ─── Grammar Categories ─── -->
                         <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Grammar categories" />
-                        <ItemsControl x:Name="GrammarCountsList">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,1">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="{Binding Name}" Foreground="{DynamicResource MutedTextBrush}" />
-                                        <TextBlock Grid.Column="1" Text="{Binding Count}" FontWeight="SemiBold" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <Border Style="{StaticResource CardStyle}" Padding="12,8">
+                            <ItemsControl x:Name="GrammarCountsList">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="0,3">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="13"
+                                                       Foreground="{DynamicResource MutedTextBrush}" />
+                                            <Border Grid.Column="1"
+                                                    Background="{DynamicResource SurfaceAltBrush}"
+                                                    CornerRadius="4"
+                                                    Padding="8,2"
+                                                    MinWidth="30"
+                                                    HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding Count}"
+                                                           FontWeight="SemiBold"
+                                                           FontSize="12"
+                                                           Foreground="{DynamicResource TextBrush}"
+                                                           HorizontalAlignment="Center" />
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Border>
 
-                        <DockPanel Margin="0,12,0,4">
+                        <!-- ─── Suggestions ─── -->
+                        <DockPanel Margin="0,6,0,6">
                             <Button DockPanel.Dock="Right"
-                                    Content="Analyze"
-                                    Padding="8,3"
+                                    Style="{StaticResource AccentButtonStyle}"
+                                    Content="✦ Analyze"
+                                    Padding="12,5"
+                                    FontSize="12"
                                     Command="{x:Static commands:AppCommands.AnalyzeNow}" />
                             <TextBlock Style="{StaticResource SectionHeaderStyle}"
                                        Margin="0"
@@ -384,22 +499,21 @@
                                  AutomationProperties.Name="Writing suggestions">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="0,0,0,7"
-                                            Padding="9"
-                                            Background="{DynamicResource SurfaceBrush}"
-                                            BorderBrush="{DynamicResource BorderBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="5">
+                                    <Border Style="{StaticResource FindingCardStyle}"
+                                            BorderBrush="{DynamicResource AccentBrush}">
                                         <StackPanel>
                                             <TextBlock FontSize="11"
-                                                       FontWeight="SemiBold"
+                                                       FontWeight="Bold"
                                                        Foreground="{DynamicResource AccentBrush}"
-                                                       Text="{Binding Kind}" />
-                                            <TextBlock Margin="0,2,0,0"
+                                                       Text="{Binding Kind}"
+                                                       Typography.Capitals="AllSmallCaps" />
+                                            <TextBlock Margin="0,4,0,0"
                                                        TextWrapping="Wrap"
+                                                       FontSize="13"
                                                        Text="{Binding Message}" />
-                                            <TextBlock Margin="0,3,0,0"
+                                            <TextBlock Margin="0,4,0,0"
                                                        FontStyle="Italic"
+                                                       FontSize="12"
                                                        Foreground="{DynamicResource MutedTextBrush}"
                                                        TextWrapping="Wrap"
                                                        Text="{Binding Suggestion}" />
@@ -408,40 +522,59 @@
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Content="Ignore selected warning"
+                        <Button Content="Ignore selected"
+                                Style="{StaticResource OutlineButtonStyle}"
                                 HorizontalAlignment="Left"
-                                Padding="8,4"
+                                Padding="10,5"
+                                FontSize="12"
                                 Click="IgnoreFinding_Click" />
                     </StackPanel>
                 </ScrollViewer>
             </Border>
 
+            <!-- Busy overlay with improved design -->
             <Border x:Name="BusyOverlay"
                     Grid.ColumnSpan="2"
-                    Background="#66000000"
                     Visibility="Collapsed">
-                <Border Width="320"
+                <Border.Background>
+                    <SolidColorBrush Color="Black" Opacity="0.45" />
+                </Border.Background>
+                <Border Width="340"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Background="{DynamicResource SurfaceBrush}"
-                        BorderBrush="{DynamicResource BorderBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8"
-                        Padding="22">
-                    <StackPanel>
-                        <ProgressBar Height="5" IsIndeterminate="True" />
+                        Style="{StaticResource FloatingOverlayStyle}"
+                        Padding="28">
+                    <StackPanel HorizontalAlignment="Center">
+                        <ProgressBar Height="4" IsIndeterminate="True" Width="220" />
                         <TextBlock x:Name="BusyText"
-                                   Margin="0,12,0,0"
+                                   Margin="0,16,0,0"
                                    HorizontalAlignment="Center"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
                                    Text="Working…" />
+                        <TextBlock Margin="0,6,0,0"
+                                   HorizontalAlignment="Center"
+                                   FontSize="12"
+                                   Foreground="{DynamicResource MutedTextBrush}"
+                                   Text="This won't take long" />
                     </StackPanel>
                 </Border>
             </Border>
         </Grid>
 
+        <!-- ════════════════════════════════════════════════════════════
+             Status Bar — with dot indicators
+             ════════════════════════════════════════════════════════════ -->
         <StatusBar Grid.Row="3" AutomationProperties.Name="Document status">
             <StatusBarItem>
-                <TextBlock x:Name="OperationStatusText" Text="Ready" />
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse x:Name="SaveStatusDot"
+                             Width="7" Height="7"
+                             Margin="0,0,6,0"
+                             VerticalAlignment="Center"
+                             Fill="{DynamicResource StatusSavedBrush}" />
+                    <TextBlock x:Name="OperationStatusText" Text="Ready" />
+                </StackPanel>
             </StatusBarItem>
             <Separator />
             <StatusBarItem>

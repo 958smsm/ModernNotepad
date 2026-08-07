@@ -155,10 +155,7 @@ public partial class EditorDocumentView : UserControl
     public void ShowFind(bool showReplace)
     {
         FindBar.Visibility = Visibility.Visible;
-        ReplaceLabel.Visibility = showReplace ? Visibility.Visible : Visibility.Collapsed;
-        ReplaceTextBox.Visibility = showReplace ? Visibility.Visible : Visibility.Collapsed;
-        ReplaceButton.Visibility = showReplace ? Visibility.Visible : Visibility.Collapsed;
-        ReplaceAllButton.Visibility = showReplace ? Visibility.Visible : Visibility.Collapsed;
+        ReplaceRow.Visibility = showReplace ? Visibility.Visible : Visibility.Collapsed;
         FindTextBox.Focus();
         FindTextBox.SelectAll();
     }

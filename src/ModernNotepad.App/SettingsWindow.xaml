@@ -2,242 +2,318 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings — Modern Notepad"
-        Width="720"
-        Height="690"
-        MinWidth="620"
-        MinHeight="540"
+        Width="740"
+        Height="710"
+        MinWidth="640"
+        MinHeight="560"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResizeWithGrip">
-    <Grid Margin="18">
+    <Grid Margin="0">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TabControl Grid.Row="0">
-            <TabItem Header="General">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid Margin="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="210" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+        <!-- ════════════════════════════════════════════════════════════
+             Left navigation panel
+             ════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="0" Grid.RowSpan="2"
+                Background="{DynamicResource SurfaceAltBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,1,0"
+                Padding="0,18,0,18">
+            <StackPanel>
+                <TextBlock Text="Settings"
+                           FontSize="20"
+                           FontWeight="Bold"
+                           Margin="20,0,0,16" />
+                <ListBox x:Name="SettingsNavList"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         SelectionChanged="SettingsNav_SelectionChanged"
+                         SelectedIndex="0">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="Padding" Value="20,10" />
+                            <Setter Property="Cursor" Value="Hand" />
+                            <Setter Property="FontSize" Value="14" />
+                            <Setter Property="Foreground" Value="{DynamicResource MutedTextBrush}" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <Border x:Name="Border"
+                                                Background="Transparent"
+                                                Padding="{TemplateBinding Padding}"
+                                                BorderThickness="3,0,0,0"
+                                                BorderBrush="Transparent">
+                                            <ContentPresenter />
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource AccentGlowBrush}" />
+                                                <Setter TargetName="Border" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+                                                <Setter Property="FontWeight" Value="SemiBold" />
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Border" Property="Background" Value="{DynamicResource HoverBrush}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBoxItem Content="⚙  General" Tag="General" />
+                    <ListBoxItem Content="🎨  Appearance" Tag="Appearance" />
+                    <ListBoxItem Content="✨  Smart Features" Tag="Smart" />
+                </ListBox>
+            </StackPanel>
+        </Border>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource SectionHeaderStyle}"
-                                   Margin="0,0,0,12"
-                                   Text="Editor defaults" />
+        <!-- ════════════════════════════════════════════════════════════
+             Content area — page switcher
+             ════════════════════════════════════════════════════════════ -->
+        <ScrollViewer Grid.Column="1" Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      Margin="24,18,24,0">
 
-                        <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Default font" />
-                        <ComboBox x:Name="DefaultFontCombo"
-                                  Grid.Row="1" Grid.Column="1"
-                                  IsEditable="True"
-                                  IsTextSearchEnabled="True"
-                                  AutomationProperties.Name="Default font" />
+            <Grid>
+                <!-- ═══ General Page ═══ -->
+                <StackPanel x:Name="GeneralPage" Visibility="Visible">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}"
+                               Margin="0,0,0,14"
+                               FontSize="18"
+                               Text="Editor defaults" />
 
-                        <TextBlock Grid.Row="2" Style="{StaticResource SettingsLabelStyle}" Text="Default font size" />
-                        <TextBox x:Name="DefaultFontSizeTextBox"
-                                 Grid.Row="2" Grid.Column="1"
-                                 MaxLength="6"
-                                 AutomationProperties.Name="Default font size" />
+                    <Border Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="3" Style="{StaticResource SettingsLabelStyle}" Text="Default file format" />
-                        <ComboBox x:Name="DefaultFormatCombo"
-                                  Grid.Row="3" Grid.Column="1"
-                                  AutomationProperties.Name="Default file format">
-                            <ComboBoxItem Content="Plain text (.txt)" Tag=".txt" />
-                            <ComboBoxItem Content="Rich text (.rtf)" Tag=".rtf" />
-                            <ComboBoxItem Content="Markdown (.md)" Tag=".md" />
-                            <ComboBoxItem Content="YAML (.yaml)" Tag=".yaml" />
-                            <ComboBoxItem Content="YAML (.yml)" Tag=".yml" />
-                            <ComboBoxItem Content="JSON (.json)" Tag=".json" />
-                            <ComboBoxItem Content="XML (.xml)" Tag=".xml" />
-                        </ComboBox>
+                            <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Default font" />
+                            <ComboBox x:Name="DefaultFontCombo"
+                                      Grid.Row="0" Grid.Column="1"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="True"
+                                      AutomationProperties.Name="Default font" />
 
-                        <TextBlock Grid.Row="4" Style="{StaticResource SettingsLabelStyle}" Text="Auto-save interval (seconds)" />
-                        <TextBox x:Name="AutoSaveTextBox"
-                                 Grid.Row="4" Grid.Column="1"
-                                 MaxLength="5"
-                                 AutomationProperties.Name="Auto-save interval in seconds" />
+                            <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Default font size" />
+                            <TextBox x:Name="DefaultFontSizeTextBox"
+                                     Grid.Row="1" Grid.Column="1"
+                                     MaxLength="6"
+                                     AutomationProperties.Name="Default font size" />
 
-                        <TextBlock Grid.Row="5" Style="{StaticResource SettingsLabelStyle}" Text="Spell-check language" />
-                        <ComboBox x:Name="SpellLanguageCombo"
-                                  Grid.Row="5" Grid.Column="1"
-                                  IsEditable="True"
-                                  AutomationProperties.Name="Spell-check language">
-                            <ComboBoxItem Content="English (United States) — en-US" Tag="en-US" />
-                            <ComboBoxItem Content="English (United Kingdom) — en-GB" Tag="en-GB" />
-                            <ComboBoxItem Content="French — fr-FR" Tag="fr-FR" />
-                            <ComboBoxItem Content="German — de-DE" Tag="de-DE" />
-                            <ComboBoxItem Content="Spanish — es-ES" Tag="es-ES" />
-                        </ComboBox>
+                            <TextBlock Grid.Row="2" Style="{StaticResource SettingsLabelStyle}" Text="Default file format" />
+                            <ComboBox x:Name="DefaultFormatCombo"
+                                      Grid.Row="2" Grid.Column="1"
+                                      AutomationProperties.Name="Default file format">
+                                <ComboBoxItem Content="Plain text (.txt)" Tag=".txt" />
+                                <ComboBoxItem Content="Rich text (.rtf)" Tag=".rtf" />
+                                <ComboBoxItem Content="Markdown (.md)" Tag=".md" />
+                                <ComboBoxItem Content="YAML (.yaml)" Tag=".yaml" />
+                                <ComboBoxItem Content="YAML (.yml)" Tag=".yml" />
+                                <ComboBoxItem Content="JSON (.json)" Tag=".json" />
+                                <ComboBoxItem Content="XML (.xml)" Tag=".xml" />
+                            </ComboBox>
 
-                        <CheckBox x:Name="WordWrapCheckBox"
-                                  Grid.Row="6" Grid.ColumnSpan="2"
-                                  Margin="0,10,0,2"
-                                  Content="Wrap long lines"
-                                  AutomationProperties.Name="Wrap long lines" />
-                        <CheckBox x:Name="TabsCheckBox"
-                                  Grid.Row="7" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,2"
-                                  Content="Enable document tabs"
-                                  AutomationProperties.Name="Enable document tabs" />
-                        <CheckBox x:Name="RestoreSessionCheckBox"
-                                  Grid.Row="8" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,2"
-                                  Content="Restore the previous session at startup"
-                                  AutomationProperties.Name="Restore previous session" />
-                        <TextBlock Grid.Row="9" Grid.ColumnSpan="2"
-                                   Margin="0,12,0,0"
-                                   Foreground="{DynamicResource MutedTextBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="Recovery snapshots are stored locally and are removed after a document is saved or intentionally discarded." />
-                    </Grid>
-                </ScrollViewer>
-            </TabItem>
+                            <TextBlock Grid.Row="3" Style="{StaticResource SettingsLabelStyle}" Text="Auto-save interval (sec)" />
+                            <TextBox x:Name="AutoSaveTextBox"
+                                     Grid.Row="3" Grid.Column="1"
+                                     MaxLength="5"
+                                     AutomationProperties.Name="Auto-save interval in seconds" />
 
-            <TabItem Header="Appearance">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid Margin="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="210" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="4" Style="{StaticResource SettingsLabelStyle}" Text="Spell-check language" />
+                            <ComboBox x:Name="SpellLanguageCombo"
+                                      Grid.Row="4" Grid.Column="1"
+                                      IsEditable="True"
+                                      AutomationProperties.Name="Spell-check language">
+                                <ComboBoxItem Content="English (United States) — en-US" Tag="en-US" />
+                                <ComboBoxItem Content="English (United Kingdom) — en-GB" Tag="en-GB" />
+                                <ComboBoxItem Content="French — fr-FR" Tag="fr-FR" />
+                                <ComboBoxItem Content="German — de-DE" Tag="de-DE" />
+                                <ComboBoxItem Content="Spanish — es-ES" Tag="es-ES" />
+                            </ComboBox>
+                        </Grid>
+                    </Border>
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource SectionHeaderStyle}"
-                                   Margin="0,0,0,12"
-                                   Text="Theme" />
-                        <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Color mode" />
-                        <ComboBox x:Name="ThemeCombo"
-                                  Grid.Row="1" Grid.Column="1"
-                                  AutomationProperties.Name="Color mode">
-                            <ComboBoxItem Content="Light" Tag="Light" />
-                            <ComboBoxItem Content="Dark" Tag="Dark" />
-                        </ComboBox>
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <CheckBox x:Name="WordWrapCheckBox"
+                                      Margin="0,2,0,6"
+                                      Content="Wrap long lines"
+                                      AutomationProperties.Name="Wrap long lines" />
+                            <CheckBox x:Name="TabsCheckBox"
+                                      Margin="0,6,0,6"
+                                      Content="Enable document tabs"
+                                      AutomationProperties.Name="Enable document tabs" />
+                            <CheckBox x:Name="RestoreSessionCheckBox"
+                                      Margin="0,6,0,2"
+                                      Content="Restore the previous session at startup"
+                                      AutomationProperties.Name="Restore previous session" />
+                        </StackPanel>
+                    </Border>
 
-                        <TextBlock Grid.Row="2" Style="{StaticResource SettingsLabelStyle}" Text="Accent color" />
-                        <DockPanel Grid.Row="2" Grid.Column="1">
-                            <Border x:Name="AccentPreview"
-                                    DockPanel.Dock="Right"
-                                    Width="34" Height="28"
-                                    Margin="8,2,2,2"
-                                    BorderBrush="{DynamicResource BorderBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="4" />
-                            <TextBox x:Name="AccentColorTextBox"
-                                     AutomationProperties.Name="Accent color hexadecimal value"
+                    <TextBlock Margin="4,2,0,0"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Text="Recovery snapshots are stored locally and are removed after a document is saved or intentionally discarded." />
+                </StackPanel>
+
+                <!-- ═══ Appearance Page ═══ -->
+                <StackPanel x:Name="AppearancePage" Visibility="Collapsed">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}"
+                               Margin="0,0,0,14"
+                               FontSize="18"
+                               Text="Theme" />
+
+                    <Border Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Color mode" />
+                            <ComboBox x:Name="ThemeCombo"
+                                      Grid.Row="0" Grid.Column="1"
+                                      AutomationProperties.Name="Color mode">
+                                <ComboBoxItem Content="Light" Tag="Light" />
+                                <ComboBoxItem Content="Dark" Tag="Dark" />
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Accent color" />
+                            <DockPanel Grid.Row="1" Grid.Column="1">
+                                <Border x:Name="AccentPreview"
+                                        DockPanel.Dock="Right"
+                                        Width="34" Height="30"
+                                        Margin="8,2,2,2"
+                                        BorderBrush="{DynamicResource BorderBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6" />
+                                <TextBox x:Name="AccentColorTextBox"
+                                         AutomationProperties.Name="Accent color hexadecimal value"
+                                         TextChanged="ColorTextBox_TextChanged" />
+                            </DockPanel>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock Margin="4,2,0,0"
+                               Foreground="{DynamicResource MutedTextBrush}"
+                               TextWrapping="Wrap"
+                               FontSize="12"
+                               Text="Enter colors as #RRGGBB or #AARRGGBB. Theme changes are applied after saving settings." />
+                </StackPanel>
+
+                <!-- ═══ Smart Features Page ═══ -->
+                <StackPanel x:Name="SmartFeaturesPage" Visibility="Collapsed">
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}"
+                               Margin="0,0,0,14"
+                               FontSize="18"
+                               Text="Optional analysis" />
+
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <CheckBox x:Name="SmartColoringCheckBox"
+                                      Margin="0,2,0,6"
+                                      Content="Enable Smart Coloring"
+                                      AutomationProperties.Name="Enable Smart Coloring" />
+                            <CheckBox x:Name="DuplicateDetectionCheckBox"
+                                      Margin="0,6,0,6"
+                                      Content="Enable duplicate-text detection"
+                                      AutomationProperties.Name="Enable duplicate-text detection" />
+                            <CheckBox x:Name="SmartPanelCheckBox"
+                                      Margin="0,6,0,2"
+                                      Content="Show the writing-assistance panel"
+                                      AutomationProperties.Name="Show writing-assistance panel" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardStyle}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="220" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate threshold" />
+                            <TextBox x:Name="DuplicateThresholdTextBox"
+                                     Grid.Row="0" Grid.Column="1"
+                                     MaxLength="4"
+                                     AutomationProperties.Name="Duplicate threshold" />
+
+                            <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate highlight color" />
+                            <TextBox x:Name="DuplicateColorTextBox"
+                                     Grid.Row="1" Grid.Column="1"
+                                     AutomationProperties.Name="Duplicate highlight color"
                                      TextChanged="ColorTextBox_TextChanged" />
-                        </DockPanel>
 
-                        <TextBlock Grid.Row="3" Grid.ColumnSpan="2"
-                                   Margin="0,14,0,0"
-                                   Foreground="{DynamicResource MutedTextBrush}"
-                                   TextWrapping="Wrap"
-                                   Text="Enter colors as #RRGGBB or #AARRGGBB. Theme changes are applied after saving settings." />
-                    </Grid>
-                </ScrollViewer>
-            </TabItem>
+                            <CheckBox x:Name="StrictDuplicatesCheckBox"
+                                      Grid.Row="2" Grid.ColumnSpan="2"
+                                      Margin="0,8,0,8"
+                                      Content="Strict checking (include common words)"
+                                      AutomationProperties.Name="Strict duplicate checking" />
 
-            <TabItem Header="Smart features">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <Grid Margin="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="250" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="3" Style="{StaticResource SettingsLabelStyle}" Text="Long-sentence threshold (words)" />
+                            <TextBox x:Name="LongSentenceTextBox"
+                                     Grid.Row="3" Grid.Column="1"
+                                     MaxLength="4"
+                                     AutomationProperties.Name="Long sentence threshold" />
 
-                        <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-                                   Style="{StaticResource SectionHeaderStyle}"
-                                   Margin="0,0,0,8"
-                                   Text="Optional analysis" />
-                        <CheckBox x:Name="SmartColoringCheckBox"
-                                  Grid.Row="1" Grid.ColumnSpan="2"
-                                  Content="Enable Smart Coloring"
-                                  AutomationProperties.Name="Enable Smart Coloring" />
-                        <CheckBox x:Name="DuplicateDetectionCheckBox"
-                                  Grid.Row="2" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,0"
-                                  Content="Enable duplicate-text detection"
-                                  AutomationProperties.Name="Enable duplicate-text detection" />
-                        <CheckBox x:Name="SmartPanelCheckBox"
-                                  Grid.Row="3" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,8"
-                                  Content="Show the writing-assistance panel"
-                                  AutomationProperties.Name="Show writing-assistance panel" />
+                            <CheckBox x:Name="PassiveVoiceCheckBox"
+                                      Grid.Row="4" Grid.ColumnSpan="2"
+                                      Margin="0,8,0,4"
+                                      Content="Detect likely passive voice"
+                                      AutomationProperties.Name="Detect passive voice" />
+                        </Grid>
+                    </Border>
 
-                        <TextBlock Grid.Row="4" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate threshold" />
-                        <TextBox x:Name="DuplicateThresholdTextBox"
-                                 Grid.Row="4" Grid.Column="1"
-                                 MaxLength="4"
-                                 AutomationProperties.Name="Duplicate threshold" />
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Style="{StaticResource SettingsLabelStyle}" Text="Maximum visual highlights" />
+                                <TextBox x:Name="MaxSpansTextBox"
+                                         Grid.Column="1"
+                                         MaxLength="6"
+                                         AutomationProperties.Name="Maximum visual highlights" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
 
-                        <TextBlock Grid.Row="5" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate highlight color" />
-                        <TextBox x:Name="DuplicateColorTextBox"
-                                 Grid.Row="5" Grid.Column="1"
-                                 AutomationProperties.Name="Duplicate highlight color"
-                                 TextChanged="ColorTextBox_TextChanged" />
+                    <TextBlock Style="{StaticResource SectionHeaderStyle}"
+                               Text="Grammar-category colors" />
 
-                        <CheckBox x:Name="StrictDuplicatesCheckBox"
-                                  Grid.Row="6" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,8"
-                                  Content="Strict checking (include common words)"
-                                  AutomationProperties.Name="Strict duplicate checking" />
-
-                        <TextBlock Grid.Row="7" Style="{StaticResource SettingsLabelStyle}" Text="Long-sentence threshold (words)" />
-                        <TextBox x:Name="LongSentenceTextBox"
-                                 Grid.Row="7" Grid.Column="1"
-                                 MaxLength="4"
-                                 AutomationProperties.Name="Long sentence threshold" />
-
-                        <CheckBox x:Name="PassiveVoiceCheckBox"
-                                  Grid.Row="8" Grid.ColumnSpan="2"
-                                  Margin="0,5,0,8"
-                                  Content="Detect likely passive voice"
-                                  AutomationProperties.Name="Detect passive voice" />
-
-                        <TextBlock Grid.Row="9" Style="{StaticResource SettingsLabelStyle}" Text="Maximum visual highlights" />
-                        <TextBox x:Name="MaxSpansTextBox"
-                                 Grid.Row="9" Grid.Column="1"
-                                 MaxLength="6"
-                                 AutomationProperties.Name="Maximum visual highlights" />
-
-                        <TextBlock Grid.Row="10" Grid.ColumnSpan="2"
-                                   Style="{StaticResource SectionHeaderStyle}"
-                                   Text="Grammar-category colors" />
-                        <Grid Grid.Row="11" Grid.ColumnSpan="2">
+                    <Border Style="{StaticResource CardStyle}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="*" />
@@ -249,58 +325,68 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Subjects / nouns" />
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Subjects / nouns" />
                                 <TextBox x:Name="SubjectColorTextBox" AutomationProperties.Name="Subject and noun color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Verbs" />
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Verbs" />
                                 <TextBox x:Name="VerbColorTextBox" AutomationProperties.Name="Verb color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Objects / nouns" />
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Objects / nouns" />
                                 <TextBox x:Name="ObjectColorTextBox" AutomationProperties.Name="Object and noun color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Adjectives" />
+                            <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,0,0,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Adjectives" />
                                 <TextBox x:Name="AdjectiveColorTextBox" AutomationProperties.Name="Adjective color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Adverbs" />
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,8,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Adverbs" />
                                 <TextBox x:Name="AdverbColorTextBox" AutomationProperties.Name="Adverb color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="8,0,0,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Pronouns" />
+                            <StackPanel Grid.Row="2" Grid.Column="1" Margin="8,0,0,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Pronouns" />
                                 <TextBox x:Name="PronounColorTextBox" AutomationProperties.Name="Pronoun color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Prepositions" />
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Prepositions" />
                                 <TextBox x:Name="PrepositionColorTextBox" AutomationProperties.Name="Preposition color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,0,0,5">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" Text="Conjunctions" />
+                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,0,0,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Conjunctions" />
                                 <TextBox x:Name="ConjunctionColorTextBox" AutomationProperties.Name="Conjunction color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
                         </Grid>
-                    </Grid>
-                </ScrollViewer>
-            </TabItem>
-        </TabControl>
+                    </Border>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
 
-        <DockPanel Grid.Row="1" Margin="0,16,0,0" LastChildFill="False">
-            <Button DockPanel.Dock="Left"
-                    Content="Restore defaults"
-                    Click="RestoreDefaults_Click" />
-            <Button DockPanel.Dock="Right"
-                    Content="Save"
-                    Style="{StaticResource AccentButtonStyle}"
-                    MinWidth="90"
-                    IsDefault="True"
-                    Click="Save_Click" />
-            <Button DockPanel.Dock="Right"
-                    Content="Cancel"
-                    MinWidth="90"
-                    IsCancel="True" />
-        </DockPanel>
+        <!-- ════════════════════════════════════════════════════════════
+             Bottom action bar
+             ════════════════════════════════════════════════════════════ -->
+        <Border Grid.Column="1" Grid.Row="1"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,1,0,0"
+                Padding="24,14">
+            <DockPanel LastChildFill="False">
+                <Button DockPanel.Dock="Left"
+                        Content="Restore defaults"
+                        Style="{StaticResource OutlineButtonStyle}"
+                        Click="RestoreDefaults_Click" />
+                <Button DockPanel.Dock="Right"
+                        Content="Save"
+                        Style="{StaticResource AccentButtonStyle}"
+                        MinWidth="100"
+                        IsDefault="True"
+                        Click="Save_Click" />
+                <Button DockPanel.Dock="Right"
+                        Content="Cancel"
+                        MinWidth="90"
+                        Margin="0,0,8,0"
+                        IsCancel="True" />
+            </DockPanel>
+        </Border>
     </Grid>
 </Window>
