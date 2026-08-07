@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Text;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -17,6 +18,7 @@ using ModernNotepad.App.Views;
 using ModernNotepad.Core.Analysis;
 using ModernNotepad.Core.Models;
 using ModernNotepad.Core.Services;
+using AppThemeMode = ModernNotepad.Core.Models.ThemeMode;
 
 namespace ModernNotepad.App;
 
@@ -66,7 +68,10 @@ public partial class MainWindow : Window
 
     private AppServices Services => ((App)Application.Current).Services;
 
-    private DocumentSession? ActiveSession => DocumentTabs.SelectedItem as DocumentSession;
+    // Routed-command CanExecute queries can run while InitializeComponent is still
+    // constructing the visual tree. Named XAML fields such as DocumentTabs are null
+    // during that window, so startup-time command queries must be null-safe.
+    private DocumentSession? ActiveSession => DocumentTabs?.SelectedItem as DocumentSession;
 
     private EditorDocumentView? ActiveView => ActiveSession?.View;
 
@@ -134,8 +139,8 @@ public partial class MainWindow : Window
             var settings = Services.Settings;
             WordWrapMenuItem.IsChecked = settings.WordWrap;
             SmartPanelMenuItem.IsChecked = settings.SmartPanelVisible;
-            DarkModeMenuItem.IsChecked = settings.Theme == ThemeMode.Dark;
-            DarkModeToggle.IsChecked = settings.Theme == ThemeMode.Dark;
+            DarkModeMenuItem.IsChecked = settings.Theme == AppThemeMode.Dark;
+            DarkModeToggle.IsChecked = settings.Theme == AppThemeMode.Dark;
             SmartColoringMenuItem.IsChecked = settings.SmartColoringEnabled;
             SmartColorToggle.IsChecked = settings.SmartColoringEnabled;
             DuplicateDetectionMenuItem.IsChecked = settings.DuplicateDetectionEnabled;
@@ -384,12 +389,13 @@ public partial class MainWindow : Window
 
         try
         {
+            var sourceLastWriteTimeUtc = session.SourceLastWriteTimeUtc;
             if (!forceSaveAs
-                && session.SourceLastWriteTimeUtc is not null
+                && sourceLastWriteTimeUtc is not null
                 && File.Exists(targetPath))
             {
                 var currentWriteTime = File.GetLastWriteTimeUtc(targetPath);
-                if (Math.Abs((currentWriteTime - session.SourceLastWriteTimeUtc.Value).TotalSeconds) > 1)
+                if (Math.Abs((currentWriteTime - sourceLastWriteTimeUtc.Value).TotalSeconds) > 1)
                 {
                     var result = MessageBox.Show(
                         this,
@@ -1290,9 +1296,9 @@ public partial class MainWindow : Window
         {
             MenuItem menuItem => menuItem.IsChecked,
             ToggleButton toggle => toggle.IsChecked == true,
-            _ => Services.Settings.Theme != ThemeMode.Dark
+            _ => Services.Settings.Theme != AppThemeMode.Dark
         };
-        Services.Settings.Theme = isDark ? ThemeMode.Dark : ThemeMode.Light;
+        Services.Settings.Theme = isDark ? AppThemeMode.Dark : AppThemeMode.Light;
         ThemeManager.Apply(Services.Settings);
         ApplySettingsToShell();
         await Services.SaveSettingsAsync();
@@ -1508,7 +1514,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private static void Window_DragOver(object sender, DragEventArgs e)
+    private void Window_DragOver(object sender, DragEventArgs e)
     {
         e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop)
             ? DragDropEffects.Copy

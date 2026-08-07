@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using ModernNotepad.Core.Analysis;
 using ModernNotepad.Core.Models;
+using AppThemeMode = ModernNotepad.Core.Models.ThemeMode;
 
 namespace ModernNotepad.App;
 
@@ -180,8 +181,8 @@ public partial class SettingsWindow : Window
         result.TabsEnabled = TabsCheckBox.IsChecked == true;
         result.RestorePreviousSession = RestoreSessionCheckBox.IsChecked == true;
         result.Theme = string.Equals(ComboTagOrText(ThemeCombo), "Dark", StringComparison.OrdinalIgnoreCase)
-            ? ThemeMode.Dark
-            : ThemeMode.Light;
+            ? AppThemeMode.Dark
+            : AppThemeMode.Light;
         result.AccentColor = AccentColorTextBox.Text.Trim();
 
         result.SmartColoringEnabled = SmartColoringCheckBox.IsChecked == true;

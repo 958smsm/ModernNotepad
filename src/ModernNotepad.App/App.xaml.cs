@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Threading;
 using ModernNotepad.App.Services;
@@ -25,12 +26,39 @@ public partial class App : Application
         }
         catch (Exception exception)
         {
+            var logPath = TryWriteStartupErrorLog(exception);
+            var diagnosticHint = logPath is null
+                ? string.Empty
+                : $"\n\nDiagnostic details were written to:\n{logPath}";
+
             MessageBox.Show(
-                $"Modern Notepad could not start.\n\n{exception.Message}",
+                $"Modern Notepad could not start.\n\n{exception.Message}{diagnosticHint}",
                 "Startup error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(-1);
+        }
+    }
+
+    private static string? TryWriteStartupErrorLog(Exception exception)
+    {
+        try
+        {
+            var directory = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ModernNotepad");
+            Directory.CreateDirectory(directory);
+
+            var path = Path.Combine(directory, "startup-error.log");
+            File.WriteAllText(
+                path,
+                $"{DateTimeOffset.Now:O}{Environment.NewLine}{exception}{Environment.NewLine}");
+            return path;
+        }
+        catch
+        {
+            // Diagnostics must never replace the original startup error.
+            return null;
         }
     }
 

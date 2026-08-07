@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Media;
 using ModernNotepad.Core.Models;
+using AppThemeMode = ModernNotepad.Core.Models.ThemeMode;
 
 namespace ModernNotepad.App.Services;
 
@@ -20,7 +21,7 @@ public static class ThemeManager
             merged.Remove(existingTheme);
         }
 
-        var themeName = settings.Theme == ThemeMode.Dark ? "Dark" : "Light";
+        var themeName = settings.Theme == AppThemeMode.Dark ? "Dark" : "Light";
         merged.Insert(0, new ResourceDictionary
         {
             Source = new Uri($"Themes/{themeName}.xaml", UriKind.Relative)
@@ -30,7 +31,7 @@ public static class ThemeManager
         resources["AccentColor"] = accent;
         resources["AccentBrush"] = Freeze(new SolidColorBrush(accent));
         resources["AccentMutedBrush"] = Freeze(new SolidColorBrush(Color.FromArgb(44, accent.R, accent.G, accent.B)));
-        resources["AccentHoverBrush"] = Freeze(new SolidColorBrush(ChangeBrightness(accent, settings.Theme == ThemeMode.Dark ? 0.18 : -0.10)));
+        resources["AccentHoverBrush"] = Freeze(new SolidColorBrush(ChangeBrightness(accent, settings.Theme == AppThemeMode.Dark ? 0.18 : -0.10)));
     }
 
     public static Color ParseColor(string? value, Color fallback)

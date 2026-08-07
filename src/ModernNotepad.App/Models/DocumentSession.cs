@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows.Documents;
 using ModernNotepad.App.Views;
 using ModernNotepad.Core.Analysis;

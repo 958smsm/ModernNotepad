@@ -4,7 +4,4 @@
     <RootNamespace>ModernNotepad.Core</RootNamespace>
     <AssemblyName>ModernNotepad.Core</AssemblyName>
   </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="System.Text.Encoding.CodePages" />
-  </ItemGroup>
 </Project>
