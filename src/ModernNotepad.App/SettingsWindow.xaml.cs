@@ -64,6 +64,7 @@ public partial class SettingsWindow : Window
             AccentColorTextBox.Text = settings.AccentColor;
 
             SmartColoringCheckBox.IsChecked = settings.SmartColoringEnabled;
+            SelectComboByTag(GrammarModeCombo, settings.GrammarAnalysisMode.ToString());
             DuplicateDetectionCheckBox.IsChecked = settings.DuplicateDetectionEnabled;
             SmartPanelCheckBox.IsChecked = settings.SmartPanelVisible;
             DuplicateThresholdTextBox.Text = settings.DuplicateThreshold.ToString(CultureInfo.CurrentCulture);
@@ -203,6 +204,9 @@ public partial class SettingsWindow : Window
         result.AccentColor = AccentColorTextBox.Text.Trim();
 
         result.SmartColoringEnabled = SmartColoringCheckBox.IsChecked == true;
+        result.GrammarAnalysisMode = string.Equals(ComboTagOrText(GrammarModeCombo), "AI", StringComparison.OrdinalIgnoreCase)
+            ? GrammarAnalysisMode.AI
+            : GrammarAnalysisMode.Traditional;
         result.DuplicateDetectionEnabled = DuplicateDetectionCheckBox.IsChecked == true;
         result.SmartPanelVisible = SmartPanelCheckBox.IsChecked == true;
         result.DuplicateThreshold = duplicateThreshold;

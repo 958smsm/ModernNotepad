@@ -34,10 +34,10 @@ public sealed class TextStatisticsTests
     }
 
     [TestMethod]
-    public void AnalysisCoordinator_IncludesGrammarCategoryStatistics()
+    public async System.Threading.Tasks.Task AnalysisCoordinator_IncludesGrammarCategoryStatistics()
     {
         var settings = ModernNotepad.Core.Models.AppSettings.CreateDefaults();
-        var analysis = new AnalysisCoordinator().Analyze(
+        var analysis = await new AnalysisCoordinator().AnalyzeAsync(
             "She carefully writes clear notes and organizes folders.",
             settings);
 

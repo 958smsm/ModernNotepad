@@ -1,6 +1,6 @@
 namespace ModernNotepad.Core.Analysis;
 
-public sealed class GrammarColorAnalyzer
+public sealed class TraditionalGrammarAnalyzer : IGrammarAnalyzer
 {
     private static readonly HashSet<string> Interrogatives = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -63,7 +63,7 @@ public sealed class GrammarColorAnalyzer
         "clear", "simple", "strong", "possible", "available", "local", "recent", "modern", "fast", "lightweight"
     };
 
-    public GrammarAnalysis Analyze(
+    public Task<GrammarAnalysis> AnalyzeAsync(
         string text,
         IReadOnlyList<TextToken>? tokens = null,
         IReadOnlyList<TextSpan>? sentences = null,
@@ -122,7 +122,7 @@ public sealed class GrammarColorAnalyzer
             }
         }
 
-        return new GrammarAnalysis(spans, counts);
+        return Task.FromResult(new GrammarAnalysis(spans, counts));
     }
 
     private static GrammarCategory Classify(string word, int start, int firstVerbStart)

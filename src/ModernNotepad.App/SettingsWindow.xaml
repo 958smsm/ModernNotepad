@@ -259,34 +259,43 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
-                            <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate threshold" />
+                            <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Grammar analysis mode" />
+                            <ComboBox x:Name="GrammarModeCombo"
+                                      Grid.Row="0" Grid.Column="1"
+                                      AutomationProperties.Name="Grammar analysis mode">
+                                <ComboBoxItem Content="Traditional (Local)" Tag="Traditional" />
+                                <ComboBoxItem Content="AI (OpenAI gpt-5.4-mini)" Tag="AI" />
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate threshold" />
                             <TextBox x:Name="DuplicateThresholdTextBox"
-                                     Grid.Row="0" Grid.Column="1"
+                                     Grid.Row="1" Grid.Column="1"
                                      MaxLength="4"
                                      AutomationProperties.Name="Duplicate threshold" />
 
-                            <TextBlock Grid.Row="1" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate highlight color" />
+                            <TextBlock Grid.Row="2" Style="{StaticResource SettingsLabelStyle}" Text="Duplicate highlight color" />
                             <TextBox x:Name="DuplicateColorTextBox"
-                                     Grid.Row="1" Grid.Column="1"
+                                     Grid.Row="2" Grid.Column="1"
                                      AutomationProperties.Name="Duplicate highlight color"
                                      TextChanged="ColorTextBox_TextChanged" />
 
                             <CheckBox x:Name="StrictDuplicatesCheckBox"
-                                      Grid.Row="2" Grid.ColumnSpan="2"
+                                      Grid.Row="3" Grid.ColumnSpan="2"
                                       Margin="0,8,0,8"
                                       Content="Strict checking (include common words)"
                                       AutomationProperties.Name="Strict duplicate checking" />
 
-                            <TextBlock Grid.Row="3" Style="{StaticResource SettingsLabelStyle}" Text="Long-sentence threshold (words)" />
+                            <TextBlock Grid.Row="4" Style="{StaticResource SettingsLabelStyle}" Text="Long-sentence threshold (words)" />
                             <TextBox x:Name="LongSentenceTextBox"
-                                     Grid.Row="3" Grid.Column="1"
+                                     Grid.Row="4" Grid.Column="1"
                                      MaxLength="4"
                                      AutomationProperties.Name="Long sentence threshold" />
 
                             <CheckBox x:Name="PassiveVoiceCheckBox"
-                                      Grid.Row="4" Grid.ColumnSpan="2"
+                                      Grid.Row="5" Grid.ColumnSpan="2"
                                       Margin="0,8,0,4"
                                       Content="Detect likely passive voice"
                                       AutomationProperties.Name="Detect passive voice" />

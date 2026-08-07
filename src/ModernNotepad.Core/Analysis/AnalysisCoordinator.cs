@@ -4,12 +4,23 @@ namespace ModernNotepad.Core.Analysis;
 
 public sealed class AnalysisCoordinator
 {
-    private readonly GrammarColorAnalyzer _grammarAnalyzer = new();
+    private readonly IGrammarAnalyzer _traditionalAnalyzer = new TraditionalGrammarAnalyzer();
+    private IGrammarAnalyzer? _aiAnalyzer;
     private readonly TextStatisticsAnalyzer _statisticsAnalyzer = new();
     private readonly DuplicateDetector _duplicateDetector = new();
     private readonly WritingAssistantAnalyzer _writingAssistantAnalyzer = new();
 
-    public Task<DocumentAnalysis> AnalyzeAsync(
+    private IGrammarAnalyzer GetAnalyzer(AppSettings settings)
+    {
+        if (settings.GrammarAnalysisMode == GrammarAnalysisMode.AI)
+        {
+            _aiAnalyzer ??= new AIGrammarAnalyzer();
+            return _aiAnalyzer;
+        }
+        return _traditionalAnalyzer;
+    }
+
+    public async Task<DocumentAnalysis> AnalyzeAsync(
         string text,
         AppSettings settings,
         CancellationToken cancellationToken = default)
@@ -17,58 +28,54 @@ public sealed class AnalysisCoordinator
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(settings);
 
-        return Task.Run(() => Analyze(text, settings, cancellationToken), cancellationToken);
-    }
-
-    public DocumentAnalysis Analyze(
-        string text,
-        AppSettings settings,
-        CancellationToken cancellationToken = default)
-    {
-        var tokens = TextTokenizer.Tokenize(text, cancellationToken);
-        var sentences = TextSegmentation.GetSentences(text, cancellationToken);
-        var paragraphs = TextSegmentation.GetParagraphs(text, cancellationToken);
-        var grammar = _grammarAnalyzer.Analyze(text, tokens, sentences, cancellationToken);
-        var statistics = _statisticsAnalyzer.Analyze(
+        var tokens = await Task.Run(() => TextTokenizer.Tokenize(text, cancellationToken), cancellationToken);
+        var sentences = await Task.Run(() => TextSegmentation.GetSentences(text, cancellationToken), cancellationToken);
+        var paragraphs = await Task.Run(() => TextSegmentation.GetParagraphs(text, cancellationToken), cancellationToken);
+        
+        var analyzer = GetAnalyzer(settings);
+        var grammar = await analyzer.AnalyzeAsync(text, tokens, sentences, cancellationToken);
+        
+        var statistics = await Task.Run(() => _statisticsAnalyzer.Analyze(
             text,
             tokens,
             sentences,
             paragraphs,
             grammar.Counts,
-            cancellationToken);
+            cancellationToken), cancellationToken);
 
         var findings = new List<TextFinding>();
         var duplicateSpans = Array.Empty<TextSpan>();
 
         if (settings.DuplicateDetectionEnabled)
         {
-            var duplicates = _duplicateDetector.Analyze(
+            var duplicates = await Task.Run(() => _duplicateDetector.Analyze(
                 text,
                 settings.DuplicateThreshold,
                 settings.StrictDuplicateChecking,
-                cancellationToken);
+                cancellationToken), cancellationToken);
             findings.AddRange(duplicates.Findings);
             duplicateSpans = duplicates.HighlightSpans.ToArray();
         }
 
         if (settings.SmartPanelVisible)
         {
-            findings.AddRange(_writingAssistantAnalyzer.Analyze(
+            var assistantFindings = await Task.Run(() => _writingAssistantAnalyzer.Analyze(
                 text,
                 tokens,
                 sentences,
                 settings.LongSentenceWordThreshold,
                 settings.PassiveVoiceDetectionEnabled,
-                cancellationToken));
+                cancellationToken), cancellationToken);
+            findings.AddRange(assistantFindings);
         }
 
-        var filteredFindings = findings
+        var filteredFindings = await Task.Run(() => findings
             .Where(finding => !settings.IgnoredWarningIds.Contains(finding.Id))
             .GroupBy(finding => finding.Id)
             .Select(group => group.First())
             .OrderBy(finding => finding.Span?.Start ?? int.MaxValue)
             .Take(500)
-            .ToArray();
+            .ToArray(), cancellationToken);
 
         var coloredSpans = settings.SmartColoringEnabled
             ? grammar.Spans.Take(settings.MaxVisualAnalysisSpans).ToArray()

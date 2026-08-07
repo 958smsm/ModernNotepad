@@ -8,6 +8,12 @@ public enum ThemeMode
     Dark
 }
 
+public enum GrammarAnalysisMode
+{
+    Traditional,
+    AI
+}
+
 public sealed class AppSettings
 {
     public string DefaultFontFamily { get; set; } = "Segoe UI";
@@ -16,6 +22,7 @@ public sealed class AppSettings
     public string AccentColor { get; set; } = "#4F6BED";
     public int AutoSaveIntervalSeconds { get; set; } = 30;
     public bool SmartColoringEnabled { get; set; }
+    public GrammarAnalysisMode GrammarAnalysisMode { get; set; } = GrammarAnalysisMode.Traditional;
     public bool DuplicateDetectionEnabled { get; set; }
     public int DuplicateThreshold { get; set; } = 3;
     public bool StrictDuplicateChecking { get; set; }
@@ -95,6 +102,7 @@ public sealed class AppSettings
             AccentColor = AccentColor,
             AutoSaveIntervalSeconds = AutoSaveIntervalSeconds,
             SmartColoringEnabled = SmartColoringEnabled,
+            GrammarAnalysisMode = GrammarAnalysisMode,
             DuplicateDetectionEnabled = DuplicateDetectionEnabled,
             DuplicateThreshold = DuplicateThreshold,
             StrictDuplicateChecking = StrictDuplicateChecking,
@@ -125,6 +133,7 @@ public sealed class AppSettings
         AccentColor = copy.AccentColor;
         AutoSaveIntervalSeconds = copy.AutoSaveIntervalSeconds;
         SmartColoringEnabled = copy.SmartColoringEnabled;
+        GrammarAnalysisMode = copy.GrammarAnalysisMode;
         DuplicateDetectionEnabled = copy.DuplicateDetectionEnabled;
         DuplicateThreshold = copy.DuplicateThreshold;
         StrictDuplicateChecking = copy.StrictDuplicateChecking;

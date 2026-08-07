@@ -4,4 +4,7 @@
     <RootNamespace>ModernNotepad.Core</RootNamespace>
     <AssemblyName>ModernNotepad.Core</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenAI" />
+  </ItemGroup>
 </Project>
