@@ -2,12 +2,17 @@ namespace ModernNotepad.Core.Analysis;
 
 public sealed class GrammarColorAnalyzer
 {
+    private static readonly HashSet<string> Interrogatives = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "who", "whom", "what", "which", "whose", "where", "when", "why", "how"
+    };
+
     private static readonly HashSet<string> Pronouns = new(StringComparer.OrdinalIgnoreCase)
     {
         "i", "me", "my", "mine", "myself", "you", "your", "yours", "yourself",
         "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself",
         "we", "us", "our", "ours", "ourselves", "they", "them", "their", "theirs", "themselves",
-        "who", "whom", "whose", "which", "that", "this", "these", "those"
+        "that", "this", "these", "those"
     };
 
     private static readonly HashSet<string> Prepositions = new(StringComparer.OrdinalIgnoreCase)
@@ -124,7 +129,12 @@ public sealed class GrammarColorAnalyzer
     {
         if (Determiners.Contains(word))
         {
-            return GrammarCategory.Other;
+            return GrammarCategory.Quantifier;
+        }
+
+        if (Interrogatives.Contains(word))
+        {
+            return GrammarCategory.Interrogative;
         }
 
         if (Pronouns.Contains(word))

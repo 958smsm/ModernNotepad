@@ -41,7 +41,9 @@ public sealed class AppSettings
         [GrammarCategory.Adverb] = "#059669",
         [GrammarCategory.Pronoun] = "#DB2777",
         [GrammarCategory.Preposition] = "#0891B2",
-        [GrammarCategory.Conjunction] = "#6B7280"
+        [GrammarCategory.Conjunction] = "#6B7280",
+        [GrammarCategory.Interrogative] = "#F97316",
+        [GrammarCategory.Quantifier] = "#8B5CF6"
     };
 
     public void Normalize()

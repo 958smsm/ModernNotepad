@@ -323,6 +323,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
@@ -349,13 +350,21 @@
                                 <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Pronouns" />
                                 <TextBox x:Name="PronounColorTextBox" AutomationProperties.Name="Pronoun color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,4">
+                            <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,0,8,8">
                                 <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Prepositions" />
                                 <TextBox x:Name="PrepositionColorTextBox" AutomationProperties.Name="Preposition color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,0,0,4">
+                            <StackPanel Grid.Row="3" Grid.Column="1" Margin="8,0,0,8">
                                 <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Conjunctions" />
                                 <TextBox x:Name="ConjunctionColorTextBox" AutomationProperties.Name="Conjunction color" TextChanged="ColorTextBox_TextChanged" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="0" Margin="0,0,8,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Interrogatives" />
+                                <TextBox x:Name="InterrogativeColorTextBox" AutomationProperties.Name="Interrogative color" TextChanged="ColorTextBox_TextChanged" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="8,0,0,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Quantifiers / determiners" />
+                                <TextBox x:Name="QuantifierColorTextBox" AutomationProperties.Name="Quantifier color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
                         </Grid>
                     </Border>

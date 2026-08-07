@@ -847,11 +847,21 @@ public partial class MainWindow : Window
     private void UpdateGrammarCounts()
     {
         var counts = ActiveSession?.Statistics.GrammarCategoryCounts;
+        var settings = Services.Settings;
         GrammarCountsList.ItemsSource = Enum.GetValues<GrammarCategory>()
             .Where(category => category != GrammarCategory.Other)
-            .Select(category => new GrammarCountDisplay(
-                GrammarCategoryDisplayName(category),
-                counts is not null && counts.TryGetValue(category, out var count) ? count : 0))
+            .Select(category =>
+            {
+                var colorHex = settings.GrammarColors.TryGetValue(category, out var c) ? c : "#667085";
+                var color = ThemeManager.ParseColor(colorHex, Colors.Gray);
+                var brush = new SolidColorBrush(color);
+                if (brush.CanFreeze) brush.Freeze();
+                return new GrammarCountDisplay(
+                    GrammarCategoryDisplayName(category),
+                    counts is not null && counts.TryGetValue(category, out var count) ? count : 0,
+                    category,
+                    brush);
+            })
             .ToArray();
     }
 
@@ -865,6 +875,8 @@ public partial class MainWindow : Window
         GrammarCategory.Pronoun => "Pronouns",
         GrammarCategory.Preposition => "Prepositions",
         GrammarCategory.Conjunction => "Conjunctions",
+        GrammarCategory.Interrogative => "Interrogatives",
+        GrammarCategory.Quantifier => "Quantifiers / determiners",
         _ => "Other"
     };
 
@@ -1676,5 +1688,51 @@ public partial class MainWindow : Window
         }
     }
 
-    private sealed record GrammarCountDisplay(string Name, int Count);
+    private sealed record GrammarCountDisplay(string Name, int Count, GrammarCategory Category, SolidColorBrush ColorBrush);
+
+    private void GrammarColorSwatch_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not FrameworkElement element || element.DataContext is not GrammarCountDisplay item)
+            return;
+
+        var menu = new ContextMenu();
+        foreach (var color in ColorPalette)
+        {
+            var brush = new SolidColorBrush(ThemeManager.ParseColor(color.Value, Colors.Black));
+            if (brush.CanFreeze) brush.Freeze();
+
+            var swatch = new Border
+            {
+                Width = 14, Height = 14,
+                CornerRadius = new CornerRadius(7),
+                Margin = new Thickness(0, 0, 7, 0),
+                Background = brush,
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(1)
+            };
+            var header = new StackPanel { Orientation = Orientation.Horizontal };
+            header.Children.Add(swatch);
+            header.Children.Add(new TextBlock { Text = color.Name, VerticalAlignment = VerticalAlignment.Center });
+
+            var menuItem = new MenuItem { Header = header, Tag = color.Value };
+            var category = item.Category;
+            menuItem.Click += async (_, _) =>
+            {
+                Services.Settings.GrammarColors[category] = (string)menuItem.Tag;
+                await Services.SaveSettingsAsync();
+                UpdateGrammarCounts();
+                // Re-apply coloring to the editor if analysis data exists
+                if (ActiveView is not null)
+                {
+                    await ActiveView.AnalyzeNowAsync();
+                }
+            };
+            menu.Items.Add(menuItem);
+        }
+
+        menu.PlacementTarget = element;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
+        e.Handled = true;
+    }
 }

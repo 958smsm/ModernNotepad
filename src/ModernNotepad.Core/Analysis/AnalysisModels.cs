@@ -10,7 +10,9 @@ public enum GrammarCategory
     Adverb,
     Pronoun,
     Preposition,
-    Conjunction
+    Conjunction,
+    Interrogative,
+    Quantifier
 }
 
 public enum FindingKind
