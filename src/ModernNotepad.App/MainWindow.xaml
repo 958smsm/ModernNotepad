@@ -162,6 +162,7 @@
                           ToolTip="Font family"
                           AutomationProperties.Name="Font family"
                           PreviewMouseLeftButtonDown="FormattingCombo_PreviewMouseLeftButtonDown"
+                          DropDownClosed="FormattingCombo_DropDownClosed"
                           SelectionChanged="FontFamilyCombo_SelectionChanged"
                           LostKeyboardFocus="FontFamilyCombo_LostKeyboardFocus"
                           KeyDown="FontFamilyCombo_KeyDown" />
@@ -172,6 +173,7 @@
                           ToolTip="Font size"
                           AutomationProperties.Name="Font size"
                           PreviewMouseLeftButtonDown="FormattingCombo_PreviewMouseLeftButtonDown"
+                          DropDownClosed="FormattingCombo_DropDownClosed"
                           SelectionChanged="FontSizeCombo_SelectionChanged"
                           LostKeyboardFocus="FontSizeCombo_LostKeyboardFocus"
                           KeyDown="FontSizeCombo_KeyDown" />

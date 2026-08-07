@@ -1227,6 +1227,36 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
+    private void FormattingCombo_DropDownClosed(object? sender, EventArgs e)
+    {
+        if (Mouse.LeftButton != MouseButtonState.Pressed || sender is not ComboBox closedCombo)
+        {
+            return;
+        }
+
+        var targetCombo = ReferenceEquals(closedCombo, FontFamilyCombo)
+            ? FontSizeCombo
+            : FontFamilyCombo;
+        var pointer = Mouse.GetPosition(targetCombo);
+        if (pointer.X < 0
+            || pointer.X > targetCombo.ActualWidth
+            || pointer.Y < 0
+            || pointer.Y > targetCombo.ActualHeight)
+        {
+            return;
+        }
+
+        // ComboBox popups capture outside clicks. Reuse the click that closed
+        // one formatting popup to open the other after capture is released.
+        targetCombo.Dispatcher.BeginInvoke(
+            DispatcherPriority.Input,
+            new Action(() =>
+            {
+                targetCombo.Focus();
+                targetCombo.IsDropDownOpen = true;
+            }));
+    }
+
     private void FontFamilyCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) =>
         ApplyFontFamilyFromControl(returnFocusToEditor: false);
 
