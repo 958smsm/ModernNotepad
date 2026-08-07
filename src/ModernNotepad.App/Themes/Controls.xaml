@@ -195,7 +195,7 @@
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="Padding" Value="4,3" />
+        <Setter Property="Padding" Value="2" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToolBar">
@@ -309,15 +309,30 @@
 
     <!-- Toolbar button (flat, compact, explicit foreground for WPF ToolBar foreground override) -->
     <Style x:Key="ToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="MinWidth" Value="34" />
-        <Setter Property="Height" Value="32" />
-        <Setter Property="Padding" Value="8,4" />
-        <Setter Property="Margin" Value="1" />
+        <Setter Property="MinWidth" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="Padding" Value="5,2" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
         <Setter Property="FontSize" Value="14" />
+    </Style>
+
+    <Style x:Key="ToolbarSeparatorStyle" TargetType="Separator">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="Margin" Value="5,2" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Separator">
+                    <Border Width="1"
+                            Background="{DynamicResource BorderBrush}"
+                            SnapsToDevicePixels="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- Accent button (primary action) -->
@@ -414,9 +429,9 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Padding" Value="8,4" />
-        <Setter Property="Margin" Value="1" />
-        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="5,2" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="Height" Value="28" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Template">
@@ -520,7 +535,7 @@
     <!-- ════════════════════════════════════════════════════════════════
          ComboBox — full template for proper dark theming
          ════════════════════════════════════════════════════════════════ -->
-    <Style TargetType="ComboBox">
+    <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceElevatedBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
@@ -540,8 +555,9 @@
                                 CornerRadius="6" />
                         <DockPanel Margin="1">
                             <ToggleButton x:Name="ToggleButton"
+                                          Style="{x:Null}"
                                           DockPanel.Dock="Right"
-                                          Width="22"
+                                          Width="18"
                                           Focusable="False"
                                           IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
                                           ClickMode="Press">
@@ -564,6 +580,7 @@
                                               Margin="{TemplateBinding Padding}"
                                               VerticalAlignment="Center" />
                             <TextBox x:Name="PART_EditableTextBox"
+                                     Style="{x:Null}"
                                      HorizontalAlignment="Stretch"
                                      VerticalAlignment="Center"
                                      Margin="{TemplateBinding Padding}"
@@ -571,8 +588,15 @@
                                      Foreground="{TemplateBinding Foreground}"
                                      BorderThickness="0"
                                      CaretBrush="{DynamicResource TextBrush}"
+                                     Text="{Binding Text, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      Visibility="Hidden"
-                                     IsReadOnly="{TemplateBinding IsReadOnly}" />
+                                     IsReadOnly="{TemplateBinding IsReadOnly}">
+                                <TextBox.Template>
+                                    <ControlTemplate TargetType="TextBox">
+                                        <ScrollViewer x:Name="PART_ContentHost" />
+                                    </ControlTemplate>
+                                </TextBox.Template>
+                            </TextBox>
                         </DockPanel>
                         <Popup x:Name="Popup"
                                Placement="Bottom"
@@ -619,6 +643,20 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style x:Key="ToolbarComboBoxStyle"
+           TargetType="ComboBox"
+           BasedOn="{StaticResource ModernComboBoxStyle}">
+        <Setter Property="Height" Value="28" />
+        <Setter Property="MinHeight" Value="28" />
+        <Setter Property="Padding" Value="5,2" />
+        <Setter Property="Margin" Value="1,0" />
+    </Style>
+
+    <!-- ToolBar supplies its own ComboBox style, so toolbar instances opt in to
+         ModernComboBoxStyle explicitly. Keep this implicit style for ComboBoxes
+         everywhere else. -->
+    <Style TargetType="ComboBox" BasedOn="{StaticResource ModernComboBoxStyle}" />
 
     <Style TargetType="ComboBoxItem">
         <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />

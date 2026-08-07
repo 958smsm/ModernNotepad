@@ -151,23 +151,27 @@
                         ToolTip="Save (Ctrl+S)"
                         AutomationProperties.Name="Save file"
                         Command="{x:Static commands:AppCommands.Save}" />
-                <Separator />
+                <Separator Style="{StaticResource ToolbarSeparatorStyle}" />
 
                 <!-- Font controls -->
                 <ComboBox x:Name="FontFamilyCombo"
-                          Width="165"
+                          Style="{StaticResource ToolbarComboBoxStyle}"
+                          Width="150"
                           IsEditable="True"
                           IsTextSearchEnabled="True"
                           ToolTip="Font family"
                           AutomationProperties.Name="Font family"
+                          PreviewMouseLeftButtonDown="FormattingCombo_PreviewMouseLeftButtonDown"
                           SelectionChanged="FontFamilyCombo_SelectionChanged"
                           LostKeyboardFocus="FontFamilyCombo_LostKeyboardFocus"
                           KeyDown="FontFamilyCombo_KeyDown" />
                 <ComboBox x:Name="FontSizeCombo"
-                          Width="72"
+                          Style="{StaticResource ToolbarComboBoxStyle}"
+                          Width="60"
                           IsEditable="True"
                           ToolTip="Font size"
                           AutomationProperties.Name="Font size"
+                          PreviewMouseLeftButtonDown="FormattingCombo_PreviewMouseLeftButtonDown"
                           SelectionChanged="FontSizeCombo_SelectionChanged"
                           LostKeyboardFocus="FontSizeCombo_LostKeyboardFocus"
                           KeyDown="FontSizeCombo_KeyDown" />
@@ -217,7 +221,7 @@
                                 Background="{DynamicResource WarningBrush}" />
                     </StackPanel>
                 </Button>
-                <Separator />
+                <Separator Style="{StaticResource ToolbarSeparatorStyle}" />
 
                 <!-- Alignment & lists -->
                 <Button Style="{StaticResource ToolbarButtonStyle}"
@@ -262,7 +266,7 @@
                         ToolTip="Clear formatting"
                         AutomationProperties.Name="Clear formatting"
                         Click="ClearFormatting_Click" />
-                <Separator />
+                <Separator Style="{StaticResource ToolbarSeparatorStyle}" />
 
                 <!-- Feature toggles -->
                 <ToggleButton x:Name="SmartColorToggle"

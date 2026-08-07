@@ -616,7 +616,7 @@ public partial class MainWindow : Window
         ActiveView?.TextEditor.Focus();
     }
 
-    private void ApplyFontFamilyFromControl()
+    private void ApplyFontFamilyFromControl(bool returnFocusToEditor = true)
     {
         if (_updatingFormatControls || ActiveView is null)
         {
@@ -631,7 +631,15 @@ public partial class MainWindow : Window
 
         try
         {
-            PrepareForFormatting();
+            if (returnFocusToEditor)
+            {
+                PrepareForFormatting();
+            }
+            else
+            {
+                ActiveView.ClearVisualOverlays();
+            }
+
             RichTextFormattingService.ApplyFontFamily(ActiveView.TextEditor, value);
         }
         catch (ArgumentException)
@@ -640,7 +648,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplyFontSizeFromControl()
+    private void ApplyFontSizeFromControl(bool returnFocusToEditor = true)
     {
         if (_updatingFormatControls || ActiveView is null)
         {
@@ -668,7 +676,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        PrepareForFormatting();
+        if (returnFocusToEditor)
+        {
+            PrepareForFormatting();
+        }
+        else
+        {
+            ActiveView.ClearVisualOverlays();
+        }
+
         RichTextFormattingService.ApplyFontSize(ActiveView.TextEditor, size);
     }
 
@@ -1197,8 +1213,22 @@ public partial class MainWindow : Window
         }
     }
 
+    private void FormattingCombo_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is not ComboBox combo || combo.IsDropDownOpen)
+        {
+            return;
+        }
+
+        // Consume the opening press so an editable template child cannot
+        // immediately reverse IsDropDownOpen during the same mouse input.
+        combo.Focus();
+        combo.IsDropDownOpen = true;
+        e.Handled = true;
+    }
+
     private void FontFamilyCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) =>
-        ApplyFontFamilyFromControl();
+        ApplyFontFamilyFromControl(returnFocusToEditor: false);
 
     private void FontFamilyCombo_KeyDown(object sender, KeyEventArgs e)
     {
@@ -1220,7 +1250,7 @@ public partial class MainWindow : Window
     }
 
     private void FontSizeCombo_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e) =>
-        ApplyFontSizeFromControl();
+        ApplyFontSizeFromControl(returnFocusToEditor: false);
 
     private void FontSizeCombo_KeyDown(object sender, KeyEventArgs e)
     {
