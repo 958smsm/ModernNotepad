@@ -21,11 +21,11 @@ Legend: **Implemented**, **Partial**, **Planned**.
 | Recovery | Previous saved-file session | **Implemented** | Optional. |
 | Smart | Duplicate words/frequency/sentences | **Implemented** | Stop-word and strict modes. |
 | Smart | Per-warning ignore | **Implemented** | Stable local IDs stored in settings. |
-| Smart | Grammar-category coloring | **Implemented** | Fast deterministic English heuristic. |
+| Smart | Grammar-category coloring | **Implemented** | Mode toggle: local Logic & Traditional NLP or OpenAI `gpt-5.4-mini`, with the same category output contract. |
 | Smart | Configurable category colors | **Implemented** | Hex colors in Settings. |
 | Smart | Statistics/readability/reading time | **Implemented** | Flesch estimate is English-oriented. |
 | Smart | Basic spelling | **Implemented** | WPF offline checker plus common-typo suggestions. |
-| Smart | Basic grammar/long sentence/passive voice | **Implemented** | Heuristic, advisory, non-blocking. |
+| Smart | Grammar categories / long sentence / passive voice | **Implemented** | Selectable local heuristic or OpenAI `gpt-5.4-mini` for grammar categories; other checks remain local and advisory. |
 | Structured | JSON validation/formatting | **Implemented** | Strict JSON; comments/trailing commas are rejected and formatting is explicit. |
 | Structured | XML validation/formatting | **Implemented** | Formatting is explicit and retains an existing XML declaration. |
 | Structured | YAML validation | **Partial** | Safe indentation/tab checks only. |
@@ -53,6 +53,6 @@ Legend: **Implemented**, **Partial**, **Planned**.
 3. **Rich formatting and lists** — complete.
 4. **Tabs/recovery/session** — complete.
 5. **Duplicate detection** — complete.
-6. **Smart grammatical coloring** — complete as an offline heuristic module.
+6. **Smart grammatical coloring** — complete with selectable Logic & Traditional NLP or OpenAI AI grammar analysis.
 7. **Writing assistance** — complete as a basic offline heuristic module.
 8. **Settings/accessibility/tests/packaging** — substantially complete; UI automation, localization, signed packaging, syntax/folding, and a large-file editor remain planned.

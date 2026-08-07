@@ -39,6 +39,7 @@ public sealed class SettingsServiceTests
         settings.DefaultFontFamily = "Consolas";
         settings.DefaultFontSize = 18;
         settings.SmartColoringEnabled = true;
+        settings.GrammarMode = GrammarAnalysisMode.AI;
         settings.DuplicateThreshold = 5;
         settings.GrammarColors[GrammarCategory.Verb] = "#123456";
         settings.RecentFiles.Add(Path.Combine(_directory, "sample.txt"));
@@ -50,6 +51,7 @@ public sealed class SettingsServiceTests
         Assert.AreEqual("Consolas", loaded.DefaultFontFamily);
         Assert.AreEqual(18d, loaded.DefaultFontSize);
         Assert.IsTrue(loaded.SmartColoringEnabled);
+        Assert.AreEqual(GrammarAnalysisMode.AI, loaded.GrammarMode);
         Assert.AreEqual(5, loaded.DuplicateThreshold);
         Assert.AreEqual("#123456", loaded.GrammarColors[GrammarCategory.Verb]);
         Assert.AreEqual(1, loaded.RecentFiles.Count);
@@ -76,6 +78,7 @@ public sealed class SettingsServiceTests
             DefaultFontSize = 500,
             AutoSaveIntervalSeconds = 1,
             DuplicateThreshold = 500,
+            GrammarMode = (GrammarAnalysisMode)999,
             GrammarColors = new Dictionary<GrammarCategory, string>()
         };
 
@@ -84,6 +87,7 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(144d, settings.DefaultFontSize);
         Assert.AreEqual(5, settings.AutoSaveIntervalSeconds);
         Assert.AreEqual(100, settings.DuplicateThreshold);
+        Assert.AreEqual(GrammarAnalysisMode.Traditional, settings.GrammarMode);
         Assert.IsTrue(settings.GrammarColors.ContainsKey(GrammarCategory.Verb));
     }
     [TestMethod]

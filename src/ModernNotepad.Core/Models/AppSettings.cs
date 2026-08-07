@@ -8,6 +8,12 @@ public enum ThemeMode
     Dark
 }
 
+public enum GrammarAnalysisMode
+{
+    Traditional,
+    AI
+}
+
 public sealed class AppSettings
 {
     public string DefaultFontFamily { get; set; } = "Segoe UI";
@@ -16,6 +22,7 @@ public sealed class AppSettings
     public string AccentColor { get; set; } = "#4F6BED";
     public int AutoSaveIntervalSeconds { get; set; } = 30;
     public bool SmartColoringEnabled { get; set; }
+    public GrammarAnalysisMode GrammarMode { get; set; } = GrammarAnalysisMode.Traditional;
     public bool DuplicateDetectionEnabled { get; set; }
     public int DuplicateThreshold { get; set; } = 3;
     public bool StrictDuplicateChecking { get; set; }
@@ -56,6 +63,11 @@ public sealed class AppSettings
         DuplicateThreshold = Math.Clamp(DuplicateThreshold, 2, 100);
         LongSentenceWordThreshold = Math.Clamp(LongSentenceWordThreshold, 10, 200);
         MaxVisualAnalysisSpans = Math.Clamp(MaxVisualAnalysisSpans, 100, 10000);
+        if (!Enum.IsDefined(typeof(GrammarAnalysisMode), GrammarMode))
+        {
+            GrammarMode = GrammarAnalysisMode.Traditional;
+        }
+
         SpellCheckLanguage = string.IsNullOrWhiteSpace(SpellCheckLanguage)
             ? "en-US"
             : SpellCheckLanguage.Trim();
@@ -95,6 +107,7 @@ public sealed class AppSettings
             AccentColor = AccentColor,
             AutoSaveIntervalSeconds = AutoSaveIntervalSeconds,
             SmartColoringEnabled = SmartColoringEnabled,
+            GrammarMode = GrammarMode,
             DuplicateDetectionEnabled = DuplicateDetectionEnabled,
             DuplicateThreshold = DuplicateThreshold,
             StrictDuplicateChecking = StrictDuplicateChecking,
@@ -125,6 +138,7 @@ public sealed class AppSettings
         AccentColor = copy.AccentColor;
         AutoSaveIntervalSeconds = copy.AutoSaveIntervalSeconds;
         SmartColoringEnabled = copy.SmartColoringEnabled;
+        GrammarMode = copy.GrammarMode;
         DuplicateDetectionEnabled = copy.DuplicateDetectionEnabled;
         DuplicateThreshold = copy.DuplicateThreshold;
         StrictDuplicateChecking = copy.StrictDuplicateChecking;

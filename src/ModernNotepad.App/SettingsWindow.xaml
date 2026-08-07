@@ -232,6 +232,28 @@
 
                     <Border Style="{StaticResource CardStyle}">
                         <StackPanel>
+                            <TextBlock Style="{StaticResource SettingsLabelStyle}"
+                                       Margin="0,0,0,8"
+                                       Text="Grammar analysis mode" />
+                            <RadioButton x:Name="TraditionalGrammarRadioButton"
+                                         GroupName="GrammarAnalysisMode"
+                                         Margin="0,2,0,7"
+                                         Content="Logic &amp; Traditional NLP (local)"
+                                         AutomationProperties.Name="Logic and Traditional NLP grammar analysis" />
+                            <RadioButton x:Name="AiGrammarRadioButton"
+                                         GroupName="GrammarAnalysisMode"
+                                         Margin="0,2,0,7"
+                                         Content="AI — OpenAI gpt-5.4-mini"
+                                         AutomationProperties.Name="AI grammar analysis using OpenAI gpt-5.4-mini" />
+                            <TextBlock Foreground="{DynamicResource MutedTextBrush}"
+                                       TextWrapping="Wrap"
+                                       FontSize="12"
+                                       Text="AI mode sends document text to OpenAI for grammar classification and requires OPENAI_API_KEY. If the request is unavailable, the app reports a warning and uses the local analyzer for that pass." />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardStyle}">
+                        <StackPanel>
                             <CheckBox x:Name="SmartColoringCheckBox"
                                       Margin="0,2,0,6"
                                       Content="Enable Smart Coloring"

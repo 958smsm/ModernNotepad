@@ -131,7 +131,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ApplySettingsToShell()
+    private void ApplySettingsToShell(bool scheduleAnalysis = true)
     {
         _updatingFeatureToggles = true;
         try
@@ -143,6 +143,14 @@ public partial class MainWindow : Window
             DarkModeToggle.IsChecked = settings.Theme == AppThemeMode.Dark;
             SmartColoringMenuItem.IsChecked = settings.SmartColoringEnabled;
             SmartColorToggle.IsChecked = settings.SmartColoringEnabled;
+            var aiGrammar = settings.GrammarMode == GrammarAnalysisMode.AI;
+            GrammarAnalysisModeToggle.IsChecked = aiGrammar;
+            GrammarAnalysisModeToggleText.Text = aiGrammar
+                ? $"AI · {OpenAiGrammarAnalyzer.Model}"
+                : "Logic & Traditional NLP";
+            GrammarAnalysisModeHint.Text = aiGrammar
+                ? "Uses OpenAI for grammar categories; sends document text to the API and requires OPENAI_API_KEY."
+                : "Runs locally on this device with the existing grammar logic.";
             DuplicateDetectionMenuItem.IsChecked = settings.DuplicateDetectionEnabled;
             DuplicateToggle.IsChecked = settings.DuplicateDetectionEnabled;
         }
@@ -158,7 +166,7 @@ public partial class MainWindow : Window
 
         foreach (var session in Documents)
         {
-            session.View?.ApplySettings();
+            session.View?.ApplySettings(scheduleAnalysis);
         }
     }
 
@@ -1328,7 +1336,25 @@ public partial class MainWindow : Window
             ToggleButton toggle => toggle.IsChecked == true,
             _ => !Services.Settings.SmartColoringEnabled
         };
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
+        await Services.SaveSettingsAsync();
+        if (ActiveView is not null)
+        {
+            await ActiveView.AnalyzeNowAsync();
+        }
+    }
+
+    private async void GrammarAnalysisMode_Click(object sender, RoutedEventArgs e)
+    {
+        if (_updatingFeatureToggles)
+        {
+            return;
+        }
+
+        Services.Settings.GrammarMode = GrammarAnalysisModeToggle.IsChecked == true
+            ? GrammarAnalysisMode.AI
+            : GrammarAnalysisMode.Traditional;
+        ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
         if (ActiveView is not null)
         {
@@ -1349,7 +1375,7 @@ public partial class MainWindow : Window
             ToggleButton toggle => toggle.IsChecked == true,
             _ => !Services.Settings.DuplicateDetectionEnabled
         };
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
         if (ActiveView is not null)
         {
@@ -1372,21 +1398,25 @@ public partial class MainWindow : Window
         };
         Services.Settings.Theme = isDark ? AppThemeMode.Dark : AppThemeMode.Light;
         ThemeManager.Apply(Services.Settings);
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
     }
 
     private async void SmartPanel_Click(object sender, RoutedEventArgs e)
     {
         Services.Settings.SmartPanelVisible = SmartPanelMenuItem.IsChecked;
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
+        if (ActiveView is not null)
+        {
+            await ActiveView.AnalyzeNowAsync();
+        }
     }
 
     private async void HideSmartPanel_Click(object sender, RoutedEventArgs e)
     {
         Services.Settings.SmartPanelVisible = false;
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
     }
 
@@ -1473,7 +1503,7 @@ public partial class MainWindow : Window
 
         Services.Settings.CopyFrom(dialog.ResultSettings);
         ThemeManager.Apply(Services.Settings);
-        ApplySettingsToShell();
+        ApplySettingsToShell(scheduleAnalysis: false);
         ConfigureAutoSaveTimer();
         await Services.SaveSettingsAsync();
         if (ActiveView is not null)
@@ -1703,7 +1733,8 @@ public partial class MainWindow : Window
 
             var swatch = new Border
             {
-                Width = 14, Height = 14,
+                Width = 14,
+                Height = 14,
                 CornerRadius = new CornerRadius(7),
                 Margin = new Thickness(0, 0, 7, 0),
                 Background = brush,

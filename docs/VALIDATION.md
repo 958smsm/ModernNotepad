@@ -25,6 +25,18 @@ The following version references were also checked against current Microsoft/NuG
 - `Microsoft.NET.Test.Sdk` `18.8.1`.
 - `MSTest.TestAdapter` and `MSTest.TestFramework` `4.3.3`.
 
+## Grammar-analysis mode change — 2026-08-08
+
+The Traditional/AI grammar-mode change received an additional static validation pass in this artifact environment:
+
+- `MainWindow.xaml`, `SettingsWindow.xaml`, project files, and central package props parse as XML.
+- New XAML names/event wiring were checked against the code-behind (`GrammarAnalysisMode_Click` and the named mode controls).
+- The AI adapter validates all eleven `GrammarCategory` keys, requires every requested token ID exactly once, and maps IDs back to the existing `GrammarAnalysis` spans/counts contract.
+- No-network unit tests were added for AI response parsing, duplicate-token rejection, and the shared grammar-output contract.
+- Settings round-trip coverage now includes the persisted grammar mode.
+
+The environment still does not contain the .NET SDK/MSBuild, so the updated source and tests were **not compiled or executed here**. Run the Windows/.NET commands below for the definitive build and test result.
+
 ## Checks that require Windows
 
 The artifact environment does not contain the .NET SDK, MSBuild, the Windows Desktop targeting pack, or a Windows GUI session. Network policy also prevented installing the SDK there. Consequently, the following claims are intentionally **not** made in this report:

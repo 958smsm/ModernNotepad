@@ -24,6 +24,7 @@ public partial class EditorDocumentView : UserControl
     private readonly FormattingOverlayManager _smartColorOverlay;
     private readonly FormattingOverlayManager _duplicateOverlay;
     private CancellationTokenSource? _analysisCancellation;
+    private DocumentAnalysis _lastAnalysis = DocumentAnalysis.Empty;
     private bool _suppressChanges;
     private bool _isApplyingVisuals;
     private int _lastFindStart = -1;
@@ -60,7 +61,7 @@ public partial class EditorDocumentView : UserControl
 
     public RichTextBox TextEditor => Editor;
 
-    public void ApplySettings()
+    public void ApplySettings(bool scheduleAnalysis = true)
     {
         var session = Session;
         if (session is null)
@@ -70,6 +71,9 @@ public partial class EditorDocumentView : UserControl
 
         SetWordWrap(Services.Settings.WordWrap);
         ApplyZoom(session.ZoomPercent);
+        _analysisTimer.Interval = Services.Settings.GrammarMode == ModernNotepad.Core.Models.GrammarAnalysisMode.AI
+            ? TimeSpan.FromMilliseconds(1500)
+            : TimeSpan.FromMilliseconds(650);
 
         try
         {
@@ -80,7 +84,10 @@ public partial class EditorDocumentView : UserControl
             Editor.Language = XmlLanguage.GetLanguage(CultureInfo.CurrentUICulture.IetfLanguageTag);
         }
 
-        ScheduleAnalysis(immediate: true);
+        if (scheduleAnalysis)
+        {
+            ScheduleAnalysis(immediate: true);
+        }
     }
 
     public void SetWordWrap(bool enabled)
@@ -134,7 +141,10 @@ public partial class EditorDocumentView : UserControl
         finally
         {
             _isApplyingVisuals = false;
-            ScheduleAnalysis();
+            if (Session is not null)
+            {
+                ApplyAnalysisVisuals(GetSnapshot(), _lastAnalysis);
+            }
         }
     }
 
@@ -406,6 +416,7 @@ public partial class EditorDocumentView : UserControl
             }
 
             session.SetAnalysis(analysis);
+            _lastAnalysis = analysis;
             ApplyAnalysisVisuals(snapshot, analysis);
             AnalysisUpdated?.Invoke(this, EventArgs.Empty);
             StatusChanged?.Invoke(this, EventArgs.Empty);
@@ -437,6 +448,7 @@ public partial class EditorDocumentView : UserControl
         _suppressChanges = true;
         try
         {
+            _lastAnalysis = DocumentAnalysis.Empty;
             Editor.Document = newSession.Document;
             newSession.View = this;
             ApplySettings();
@@ -599,7 +611,6 @@ public partial class EditorDocumentView : UserControl
     private void UserControl_Loaded(object sender, RoutedEventArgs e)
     {
         ApplySettings();
-        ScheduleAnalysis(immediate: true);
     }
 
     private void UserControl_Unloaded(object sender, RoutedEventArgs e)

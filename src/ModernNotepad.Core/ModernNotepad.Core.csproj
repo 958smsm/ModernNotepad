@@ -3,5 +3,9 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>ModernNotepad.Core</RootNamespace>
     <AssemblyName>ModernNotepad.Core</AssemblyName>
+    <NoWarn>$(NoWarn);OPENAI001</NoWarn>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="OpenAI" />
+  </ItemGroup>
 </Project>

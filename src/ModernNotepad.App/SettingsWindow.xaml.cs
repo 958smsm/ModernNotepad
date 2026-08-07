@@ -64,6 +64,8 @@ public partial class SettingsWindow : Window
             AccentColorTextBox.Text = settings.AccentColor;
 
             SmartColoringCheckBox.IsChecked = settings.SmartColoringEnabled;
+            TraditionalGrammarRadioButton.IsChecked = settings.GrammarMode == GrammarAnalysisMode.Traditional;
+            AiGrammarRadioButton.IsChecked = settings.GrammarMode == GrammarAnalysisMode.AI;
             DuplicateDetectionCheckBox.IsChecked = settings.DuplicateDetectionEnabled;
             SmartPanelCheckBox.IsChecked = settings.SmartPanelVisible;
             DuplicateThresholdTextBox.Text = settings.DuplicateThreshold.ToString(CultureInfo.CurrentCulture);
@@ -203,6 +205,9 @@ public partial class SettingsWindow : Window
         result.AccentColor = AccentColorTextBox.Text.Trim();
 
         result.SmartColoringEnabled = SmartColoringCheckBox.IsChecked == true;
+        result.GrammarMode = AiGrammarRadioButton.IsChecked == true
+            ? GrammarAnalysisMode.AI
+            : GrammarAnalysisMode.Traditional;
         result.DuplicateDetectionEnabled = DuplicateDetectionCheckBox.IsChecked == true;
         result.SmartPanelVisible = SmartPanelCheckBox.IsChecked == true;
         result.DuplicateThreshold = duplicateThreshold;

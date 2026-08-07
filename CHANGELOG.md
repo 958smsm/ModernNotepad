@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added a persisted Grammar Analysis mode toggle between **Logic & Traditional NLP** and **AI**.
+- Added OpenAI `2.12.0` Responses API integration using `gpt-5.4-mini` and `OPENAI_API_KEY`.
+- AI token classifications are validated and mapped back to the existing `GrammarAnalysis` category-count/span format; failures fall back to the local analyzer with an explicit warning.
+- Reduced unnecessary AI requests by using a longer AI debounce and reusing existing visual analysis when serializing RTF/recovery snapshots.
+
 ## 1.0.0 - 2026-08-06
 
 - Initial WPF/.NET 10 implementation.

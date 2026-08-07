@@ -1,8 +1,10 @@
 # Security and privacy
 
-## Offline behavior
+## Offline and AI behavior
 
-Modern Notepad contains no telemetry, advertising, account, HTTP client, cloud API, or automatic content upload. Smart analysis and spell checking are local.
+Modern Notepad remains offline-first. Logic & Traditional NLP grammar analysis, writing-assistance checks, duplicate detection, and spell checking are local. No telemetry, advertising, or account system is added.
+
+When the user explicitly selects **AI** grammar analysis, the current document text is sent to the OpenAI Responses API and classified with `gpt-5.4-mini`. The API key is read from the `OPENAI_API_KEY` environment variable and is not stored in Modern Notepad settings. If the API request or response is unavailable, the app reports a warning and uses the local grammar analyzer for that pass.
 
 ## Local storage
 

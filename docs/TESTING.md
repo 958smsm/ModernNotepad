@@ -13,6 +13,7 @@ Current test groups:
 - **File operations**: UTF-8 BOM, Windows-1252, mixed CRLF/LF/CR preservation, special characters, and atomic replacement cleanup.
 - **Duplicate detection**: repeated words, stop-word behavior, strict mode, duplicate sentences, and configured thresholds.
 - **Text statistics**: word/character/sentence/paragraph counts, reading time, readability range, and grammar-category counts.
+- **AI grammar contract**: JSON category parsing, duplicate-token rejection, and mapping AI token classifications into the same `GrammarAnalysis` category-count/span structure as Traditional mode without making a network request.
 - **Settings**: serialization round trip, corruption fallback/preservation, bounds normalization, and default color repair.
 - **Structured text**: strict JSON parsing (including comment rejection), JSON error positions/formatting, XML declaration-preserving formatting, and YAML tab-indentation warnings.
 
@@ -28,11 +29,12 @@ Current test groups:
 8. Append an emoji to that Windows-1252 file; verify the UTF-8 conversion prompt.
 9. Exercise undo/redo, cut/copy/paste, find/replace, lists, indentation, alignment, colors, and zoom.
 10. Enable Smart Coloring and duplicate detection; type quickly and confirm the UI remains responsive.
-11. Double-click a finding, ignore it, and confirm it disappears after reanalysis.
-12. Make two dirty tabs, close the window, and test Save, Discard, and Cancel paths.
-13. Force-terminate the process with a dirty document after an autosave interval; restart and verify recovery.
-14. Modify an open file in another editor and verify the external-change warning on save.
-15. Toggle high-contrast/keyboard navigation where applicable and inspect labels with Windows accessibility tools.
+11. Toggle grammar analysis between **Logic & Traditional NLP** and **AI**. With `OPENAI_API_KEY` set, confirm AI category counts/highlights update. Then launch without the key, choose AI, and confirm a fallback warning appears while local grammar results keep the editor usable.
+12. Double-click a finding, ignore it, and confirm it disappears after reanalysis.
+13. Make two dirty tabs, close the window, and test Save, Discard, and Cancel paths.
+14. Force-terminate the process with a dirty document after an autosave interval; restart and verify recovery.
+15. Modify an open file in another editor and verify the external-change warning on save.
+16. Toggle high-contrast/keyboard navigation where applicable and inspect labels with Windows accessibility tools.
 
 ## Performance test suggestions
 

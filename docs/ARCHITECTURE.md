@@ -48,7 +48,7 @@ All state is under `%LOCALAPPDATA%\ModernNotepad`.
 
 #### Analysis pipeline
 
-`AnalysisCoordinator` is the module façade. A debounced editor pass captures text on the UI thread and calls it through `Task.Run` with a `CancellationToken`.
+`AnalysisCoordinator` is the module façade. A debounced editor pass captures text on the UI thread. Logic & Traditional NLP analysis runs through `Task.Run`; AI grammar mode calls the OpenAI Responses API asynchronously and then merges the result back into the same analysis contract.
 
 ```text
 text
@@ -56,7 +56,9 @@ text
  ├─ TextSegmentation             │
  │   ├─ sentences                │
  │   └─ paragraphs               │
- ├─ GrammarColorAnalyzer         ├─> TextStatisticsAnalyzer
+ ├─ Grammar provider             ├─> TextStatisticsAnalyzer
+ │   ├─ GrammarColorAnalyzer     │
+ │   └─ OpenAiGrammarAnalyzer    │
  ├─ DuplicateDetector            │
  └─ WritingAssistantAnalyzer ────┘
                     |
@@ -104,7 +106,7 @@ MSTest tests only the core project. This keeps tests fast and runnable without a
 
 The following can be replaced without rewriting the shell:
 
-- `GrammarColorAnalyzer` with a local ONNX/NLP implementation.
+- The grammar provider: `GrammarColorAnalyzer` supplies the existing local logic and `OpenAiGrammarAnalyzer` supplies optional OpenAI classification while returning the same `GrammarAnalysis` structure.
 - `WritingAssistantAnalyzer` with language-specific providers.
 - YAML validation with an adapter around a full parser.
 - `FormattingOverlayManager` with a non-mutating adorner renderer.
@@ -113,4 +115,4 @@ The following can be replaced without rewriting the shell:
 
 ## Dependency policy
 
-Runtime dependencies are intentionally minimal. The only non-framework runtime package is Microsoft's `System.Text.Encoding.CodePages`, used for legacy Windows encodings. Test packages are Microsoft Test SDK/MSTest. No cloud service is required.
+Runtime dependencies are intentionally minimal. OpenAI `2.12.0` is used only when AI grammar mode is selected; Logic & Traditional NLP remains local and requires no cloud service. Test packages are Microsoft Test SDK/MSTest.
