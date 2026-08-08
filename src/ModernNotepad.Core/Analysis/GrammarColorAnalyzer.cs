@@ -4,15 +4,14 @@ public sealed class GrammarColorAnalyzer
 {
     private static readonly HashSet<string> Interrogatives = new(StringComparer.OrdinalIgnoreCase)
     {
-        "who", "whom", "what", "which", "whose", "where", "when", "why", "how"
+        "who", "whom", "what", "which", "whose", "where", "why", "how"
     };
 
     private static readonly HashSet<string> Pronouns = new(StringComparer.OrdinalIgnoreCase)
     {
         "i", "me", "my", "mine", "myself", "you", "your", "yours", "yourself",
         "he", "him", "his", "himself", "she", "her", "hers", "herself", "it", "its", "itself",
-        "we", "us", "our", "ours", "ourselves", "they", "them", "their", "theirs", "themselves",
-        "that", "this", "these", "those"
+        "we", "us", "our", "ours", "ourselves", "they", "them", "their", "theirs", "themselves"
     };
 
     private static readonly HashSet<string> Prepositions = new(StringComparer.OrdinalIgnoreCase)
@@ -20,20 +19,19 @@ public sealed class GrammarColorAnalyzer
         "about", "above", "across", "after", "against", "along", "among", "around", "at", "before",
         "behind", "below", "beneath", "beside", "between", "beyond", "by", "despite", "during", "for",
         "from", "in", "inside", "into", "like", "near", "of", "off", "on", "onto", "out", "outside",
-        "over", "past", "since", "through", "throughout", "to", "toward", "under", "until", "up", "upon",
+        "over", "past", "since", "through", "throughout", "toward", "under", "until", "up", "upon",
         "with", "within", "without"
     };
 
     private static readonly HashSet<string> Conjunctions = new(StringComparer.OrdinalIgnoreCase)
     {
-        "and", "but", "or", "nor", "for", "yet", "so", "although", "because", "since", "unless",
-        "while", "whereas", "if", "when", "whenever", "where", "wherever", "whether", "than", "though"
+        "and", "but", "or", "nor", "so", "yet", "because", "although", "unless", "since", "while", "if", "when"
     };
 
     private static readonly HashSet<string> Determiners = new(StringComparer.OrdinalIgnoreCase)
     {
-        "a", "an", "the", "some", "any", "each", "every", "either", "neither", "many", "much", "few",
-        "little", "several", "all", "both", "no", "another"
+        "a", "an", "the", "this", "that", "these", "those", "some", "any", "every", "all", "both", "neither", "either",
+        "no", "much", "many", "most", "several", "enough", "fewer"
     };
 
     private static readonly HashSet<string> CommonNouns = new(StringComparer.OrdinalIgnoreCase)
@@ -149,6 +147,8 @@ public sealed class GrammarColorAnalyzer
     {
         var word = sentenceTokens[index].Normalized;
 
+        if (word.Equals("to", StringComparison.OrdinalIgnoreCase)) return GrammarCategory.Other;
+
         if (Determiners.Contains(word)) return GrammarCategory.Quantifier;
         if (Interrogatives.Contains(word)) return GrammarCategory.Interrogative;
         if (Pronouns.Contains(word)) return GrammarCategory.Pronoun;
@@ -163,6 +163,8 @@ public sealed class GrammarColorAnalyzer
 
     private static GrammarCategory ClassifyTokenSimple(string word)
     {
+        if (word.Equals("to", StringComparison.OrdinalIgnoreCase)) return GrammarCategory.Other;
+        
         if (Determiners.Contains(word)) return GrammarCategory.Quantifier;
         if (Interrogatives.Contains(word)) return GrammarCategory.Interrogative;
         if (Pronouns.Contains(word)) return GrammarCategory.Pronoun;
@@ -234,6 +236,13 @@ public sealed class GrammarColorAnalyzer
 
     private static bool IsNoun(string word)
     {
+        if (CommonNouns.Contains(word)) return true;
+        if (GrammarLexicon.Lexicon.TryGetValue(word, out var category) && 
+            (category == GrammarCategory.ObjectNoun || category == GrammarCategory.SubjectNoun))
+        {
+            return true;
+        }
+
         return !Determiners.Contains(word)
             && !Interrogatives.Contains(word)
             && !Pronouns.Contains(word)
@@ -247,32 +256,49 @@ public sealed class GrammarColorAnalyzer
     private static bool IsVerb(string word)
     {
         if (CommonNouns.Contains(word) || CommonAdjectives.Contains(word)) return false;
+        if (CommonVerbs.Contains(word)) return true;
 
-        return CommonVerbs.Contains(word)
-            || (word.Length > 4 && (word.EndsWith("ing", StringComparison.OrdinalIgnoreCase)
+        if (GrammarLexicon.Lexicon.TryGetValue(word, out var category))
+        {
+            return category == GrammarCategory.Verb;
+        }
+
+        return word.Length > 4 && (word.EndsWith("ing", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ed", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ize", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ise", StringComparison.OrdinalIgnoreCase)
-                || word.EndsWith("ify", StringComparison.OrdinalIgnoreCase)));
+                || word.EndsWith("ify", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsAdverb(string word)
     {
-        return word is "very" or "quite" or "rather" or "often" or "always" or "never" or "soon" or "well" or "too" or "then" or "now" or "instead"
-            || (word.Length > 4 && word.EndsWith("ly", StringComparison.OrdinalIgnoreCase));
+        if (word is "very" or "quite" or "rather" or "often" or "always" or "never" or "soon" or "well" or "too" or "then" or "now" or "instead") 
+            return true;
+            
+        if (GrammarLexicon.Lexicon.TryGetValue(word, out var category))
+        {
+            return category == GrammarCategory.Adverb;
+        }
+
+        return word.Length > 4 && word.EndsWith("ly", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsAdjective(string word)
     {
         if (CommonNouns.Contains(word) || CommonVerbs.Contains(word)) return false;
+        if (CommonAdjectives.Contains(word)) return true;
 
-        return CommonAdjectives.Contains(word)
-            || (word.Length > 4 && (word.EndsWith("ous", StringComparison.OrdinalIgnoreCase)
+        if (GrammarLexicon.Lexicon.TryGetValue(word, out var category))
+        {
+            return category == GrammarCategory.Adjective;
+        }
+
+        return word.Length > 4 && (word.EndsWith("ous", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ful", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("less", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("able", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ible", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ive", StringComparison.OrdinalIgnoreCase)
-                || word.EndsWith("al", StringComparison.OrdinalIgnoreCase)));
+                || word.EndsWith("al", StringComparison.OrdinalIgnoreCase));
     }
 }

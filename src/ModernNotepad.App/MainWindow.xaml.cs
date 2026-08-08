@@ -1812,6 +1812,10 @@ public partial class MainWindow : Window
         var text = view.GetPlainText();
         var sb = new StringBuilder();
 
+        sb.AppendLine($"input: \"{text}\"");
+        sb.AppendLine();
+        sb.AppendLine("output:");
+
         foreach (var span in spans)
         {
             if (span.Span.Start >= 0 && span.Span.End <= text.Length)
