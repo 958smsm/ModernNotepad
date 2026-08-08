@@ -1795,6 +1795,55 @@ public partial class MainWindow : Window
             MessageBoxImage.Information);
     }
 
+    private void CopyGrammarCategories_Click(object sender, RoutedEventArgs e)
+    {
+        var view = ActiveView;
+        if (view is null)
+        {
+            return;
+        }
+
+        var spans = view.LastAnalysis.ColoredSpans;
+        if (spans.Count == 0)
+        {
+            return;
+        }
+
+        var text = view.GetPlainText();
+        var sb = new StringBuilder();
+
+        foreach (var span in spans)
+        {
+            if (span.Span.Start >= 0 && span.Span.End <= text.Length)
+            {
+                var token = text.Substring(span.Span.Start, span.Span.Length);
+                var categoryName = span.Category switch
+                {
+                    GrammarCategory.ObjectNoun => "Object/Noun",
+                    GrammarCategory.SubjectNoun => "Subject/Noun",
+                    var cat => cat.ToString()
+                };
+
+                sb.AppendLine($"  - token: {token}");
+                sb.AppendLine($"    category: {categoryName}");
+                sb.AppendLine();
+            }
+        }
+
+        if (sb.Length > 0)
+        {
+            try
+            {
+                Clipboard.SetText(sb.ToString().TrimEnd());
+                OperationStatusText.Text = "Grammar categories copied to clipboard";
+            }
+            catch
+            {
+                // Ignore transient clipboard locks
+            }
+        }
+    }
+
     private async void Window_Closing(object? sender, CancelEventArgs e)
     {
         if (_allowWindowClose)

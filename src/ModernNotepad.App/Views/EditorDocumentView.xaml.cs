@@ -60,6 +60,7 @@ public partial class EditorDocumentView : UserControl
     private AppServices Services => ((App)Application.Current).Services;
 
     public RichTextBox TextEditor => Editor;
+    public DocumentAnalysis LastAnalysis => _lastAnalysis;
 
     public void ApplySettings(bool scheduleAnalysis = true)
     {

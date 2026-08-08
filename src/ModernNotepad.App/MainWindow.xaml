@@ -509,7 +509,18 @@
                         </UniformGrid>
 
                         <!-- ─── Grammar Categories ─── -->
-                        <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="Grammar categories" />
+                        <DockPanel Margin="0,6,0,6">
+                            <Button DockPanel.Dock="Right"
+                                    Style="{StaticResource OutlineButtonStyle}"
+                                    Content="Copy tokens"
+                                    Padding="12,5"
+                                    FontSize="12"
+                                    Click="CopyGrammarCategories_Click" />
+                            <TextBlock Style="{StaticResource SectionHeaderStyle}"
+                                       Margin="0"
+                                       VerticalAlignment="Center"
+                                       Text="Grammar categories" />
+                        </DockPanel>
                         <Border Style="{StaticResource CardStyle}" Padding="12,8">
                             <ItemsControl x:Name="GrammarCountsList">
                                 <ItemsControl.ItemTemplate>

@@ -42,7 +42,7 @@ public sealed class GrammarColorAnalyzer
         "building", "testing", "meeting", "training", "planning", "setting", "meaning",
         "marketing", "engineering", "coding", "programming", "learning", "drawing", "painting",
         "feeling", "finding", "recording", "showing", "warning", "opening", "closing",
-        "configuration", "isolation", "detection"
+        "configuration", "isolation", "detection", "logic"
     };
 
     private static readonly HashSet<string> CommonVerbs = new(StringComparer.OrdinalIgnoreCase)
@@ -74,7 +74,7 @@ public sealed class GrammarColorAnalyzer
         "process", "processes", "processed", "evaluate", "evaluates", "evaluated", "configure", "configures", "configured",
         "ingest", "ingests", "ingested", "handle", "handles", "handled", "share", "shares", "shared", 
         "maintain", "maintains", "maintained", "store", "stores", "stored", "deliver", "delivers", "delivered",
-        "produce", "produces", "produced"
+        "produce", "produces", "produced", "convert", "converts", "converted"
     };
 
     private static readonly HashSet<string> CommonAdjectives = new(StringComparer.OrdinalIgnoreCase)
@@ -84,7 +84,7 @@ public sealed class GrammarColorAnalyzer
         "clear", "simple", "strong", "possible", "available", "local", "recent", "modern", "fast", "lightweight",
         "current", "previous", "true", "false", "valid", "invalid", "empty", "full", "static", "dynamic", "private",
         "specific", "basic", "active", "inactive", "visible", "hidden", "raw", "scalable", "stream-processing",
-        "customer-specific", "production-ready", "central"
+        "customer-specific", "production-ready", "central", "semantic"
     };
 
     public GrammarAnalysis Analyze(
