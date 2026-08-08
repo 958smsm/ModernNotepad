@@ -36,6 +36,15 @@ public sealed class GrammarColorAnalyzer
         "little", "several", "all", "both", "no", "another"
     };
 
+    private static readonly HashSet<string> CommonNouns = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "processing", "tracking", "understanding", "monitoring", "versioning", "scaling",
+        "building", "testing", "meeting", "training", "planning", "setting", "meaning",
+        "marketing", "engineering", "coding", "programming", "learning", "drawing", "painting",
+        "feeling", "finding", "recording", "showing", "warning", "opening", "closing",
+        "configuration", "isolation", "detection"
+    };
+
     private static readonly HashSet<string> CommonVerbs = new(StringComparer.OrdinalIgnoreCase)
     {
         "am", "is", "are", "was", "were", "be", "being", "been", "have", "has", "had", "do", "does", "did",
@@ -53,14 +62,29 @@ public sealed class GrammarColorAnalyzer
         "include", "includes", "included", "continue", "continues", "continued", "set", "learn", "learns", "learned",
         "change", "changes", "changed", "lead", "leads", "led", "understand", "understands", "understood", "watch",
         "watches", "watched", "follow", "follows", "followed", "stop", "stops", "stopped", "create", "creates",
-        "created", "speak", "speaks", "spoke", "spoken", "read", "allow", "allows", "allowed", "add", "adds", "added"
+        "created", "speak", "speaks", "spoke", "spoken", "read", "allow", "allows", "allowed", "add", "adds", "added",
+        "separate", "separates", "separated", "update", "updates", "updated", "delete", "deletes", "deleted",
+        "remove", "removes", "removed", "save", "saves", "saved", "open", "opens", "opened", "close", "closes", "closed",
+        "format", "formats", "formatted", "check", "checks", "checked", "select", "selects", "selected",
+        "copy", "copies", "copied", "paste", "pastes", "pasted", "cut", "cuts", "replace", "replaces", "replaced",
+        "insert", "inserts", "inserted", "view", "views", "viewed", "help", "helps", "helped",
+        "build", "builds", "built", "compile", "compiles", "compiled", "execute", "executes", "executed",
+        "test", "tests", "tested", "debug", "debugs", "debugged", "deploy", "deploys", "deployed",
+        "generate", "generates", "generated", "analyze", "analyzes", "analyzed", "parse", "parses", "parsed",
+        "process", "processes", "processed", "evaluate", "evaluates", "evaluated", "configure", "configures", "configured",
+        "ingest", "ingests", "ingested", "handle", "handles", "handled", "share", "shares", "shared", 
+        "maintain", "maintains", "maintained", "store", "stores", "stored", "deliver", "delivers", "delivered",
+        "produce", "produces", "produced"
     };
 
     private static readonly HashSet<string> CommonAdjectives = new(StringComparer.OrdinalIgnoreCase)
     {
         "good", "new", "first", "last", "long", "great", "little", "own", "other", "old", "right", "big", "high",
         "different", "small", "large", "next", "early", "young", "important", "few", "public", "bad", "same", "able",
-        "clear", "simple", "strong", "possible", "available", "local", "recent", "modern", "fast", "lightweight"
+        "clear", "simple", "strong", "possible", "available", "local", "recent", "modern", "fast", "lightweight",
+        "current", "previous", "true", "false", "valid", "invalid", "empty", "full", "static", "dynamic", "private",
+        "specific", "basic", "active", "inactive", "visible", "hidden", "raw", "scalable", "stream-processing",
+        "customer-specific", "production-ready", "central"
     };
 
     public GrammarAnalysis Analyze(
@@ -84,21 +108,17 @@ public sealed class GrammarColorAnalyzer
             var sentenceTokens = tokens
                 .Where(token => token.Span.Start >= sentence.Start && token.Span.End <= sentence.End)
                 .ToArray();
+            
             if (sentenceTokens.Length == 0)
             {
                 continue;
             }
 
-            var firstVerbStart = sentenceTokens
-                .Where(token => IsVerb(token.Normalized))
-                .Select(token => token.Span.Start)
-                .DefaultIfEmpty(int.MaxValue)
-                .First();
-
-            foreach (var token in sentenceTokens)
+            for (int i = 0; i < sentenceTokens.Length; i++)
             {
+                var token = sentenceTokens[i];
                 processedStarts.Add(token.Span.Start);
-                var category = Classify(token.Normalized, token.Span.Start, firstVerbStart);
+                var category = ClassifyToken(i, sentenceTokens);
                 counts[category]++;
                 if (category != GrammarCategory.Other)
                 {
@@ -114,7 +134,7 @@ public sealed class GrammarColorAnalyzer
                 continue;
             }
 
-            var category = Classify(token.Normalized, token.Span.Start, int.MaxValue);
+            var category = ClassifyTokenSimple(token.Normalized);
             counts[category]++;
             if (category != GrammarCategory.Other)
             {
@@ -125,55 +145,109 @@ public sealed class GrammarColorAnalyzer
         return new GrammarAnalysis(spans, counts);
     }
 
-    private static GrammarCategory Classify(string word, int start, int firstVerbStart)
+    private static GrammarCategory ClassifyToken(int index, TextToken[] sentenceTokens)
     {
-        if (Determiners.Contains(word))
+        var word = sentenceTokens[index].Normalized;
+
+        if (Determiners.Contains(word)) return GrammarCategory.Quantifier;
+        if (Interrogatives.Contains(word)) return GrammarCategory.Interrogative;
+        if (Pronouns.Contains(word)) return GrammarCategory.Pronoun;
+        if (Conjunctions.Contains(word)) return GrammarCategory.Conjunction;
+        if (Prepositions.Contains(word)) return GrammarCategory.Preposition;
+        if (IsAdverb(word)) return GrammarCategory.Adverb;
+        if (IsVerb(word)) return GrammarCategory.Verb;
+        if (IsAdjective(word)) return GrammarCategory.Adjective;
+
+        return ClassifyNounInContext(index, sentenceTokens);
+    }
+
+    private static GrammarCategory ClassifyTokenSimple(string word)
+    {
+        if (Determiners.Contains(word)) return GrammarCategory.Quantifier;
+        if (Interrogatives.Contains(word)) return GrammarCategory.Interrogative;
+        if (Pronouns.Contains(word)) return GrammarCategory.Pronoun;
+        if (Conjunctions.Contains(word)) return GrammarCategory.Conjunction;
+        if (Prepositions.Contains(word)) return GrammarCategory.Preposition;
+        if (IsAdverb(word)) return GrammarCategory.Adverb;
+        if (IsVerb(word)) return GrammarCategory.Verb;
+        if (IsAdjective(word)) return GrammarCategory.Adjective;
+        return GrammarCategory.ObjectNoun;
+    }
+
+    private static GrammarCategory ClassifyNounInContext(int index, TextToken[] sentenceTokens)
+    {
+        var verbs = new List<int>();
+        for (int i = 0; i < sentenceTokens.Length; i++)
         {
-            return GrammarCategory.Quantifier;
+            if (IsVerb(sentenceTokens[i].Normalized)) verbs.Add(i);
         }
 
-        if (Interrogatives.Contains(word))
+        if (verbs.Count == 0) return GrammarCategory.ObjectNoun;
+
+        int ownerVerbIndex = -1;
+        int minDistance = int.MaxValue;
+
+        foreach (var vIndex in verbs)
         {
-            return GrammarCategory.Interrogative;
+            int dist = 0;
+            int start = Math.Min(index, vIndex) + 1;
+            int end = Math.Max(index, vIndex);
+
+            for (int i = start; i < end; i++)
+            {
+                dist++;
+                var norm = sentenceTokens[i].Normalized;
+                if (norm is "," or ";" or "." || Conjunctions.Contains(norm))
+                {
+                    dist += 10;
+                }
+            }
+
+            if (dist < minDistance)
+            {
+                minDistance = dist;
+                ownerVerbIndex = vIndex;
+            }
         }
 
-        if (Pronouns.Contains(word))
+        bool isSubjectPosition = index < ownerVerbIndex;
+        if (!isSubjectPosition) return GrammarCategory.ObjectNoun;
+
+        bool isHeadNoun = true;
+        for (int i = index + 1; i < ownerVerbIndex; i++)
         {
-            return GrammarCategory.Pronoun;
+            var norm = sentenceTokens[i].Normalized;
+            if (norm is "," or ";" or "." || Conjunctions.Contains(norm))
+            {
+                break;
+            }
+
+            if (IsNoun(norm))
+            {
+                isHeadNoun = false;
+                break;
+            }
         }
 
-        if (Conjunctions.Contains(word))
-        {
-            return GrammarCategory.Conjunction;
-        }
+        return isHeadNoun ? GrammarCategory.SubjectNoun : GrammarCategory.ObjectNoun;
+    }
 
-        if (Prepositions.Contains(word))
-        {
-            return GrammarCategory.Preposition;
-        }
-
-        if (IsAdverb(word))
-        {
-            return GrammarCategory.Adverb;
-        }
-
-        if (IsVerb(word))
-        {
-            return GrammarCategory.Verb;
-        }
-
-        if (IsAdjective(word))
-        {
-            return GrammarCategory.Adjective;
-        }
-
-        return start < firstVerbStart
-            ? GrammarCategory.SubjectNoun
-            : GrammarCategory.ObjectNoun;
+    private static bool IsNoun(string word)
+    {
+        return !Determiners.Contains(word)
+            && !Interrogatives.Contains(word)
+            && !Pronouns.Contains(word)
+            && !Conjunctions.Contains(word)
+            && !Prepositions.Contains(word)
+            && !IsAdverb(word)
+            && !IsVerb(word)
+            && !IsAdjective(word);
     }
 
     private static bool IsVerb(string word)
     {
+        if (CommonNouns.Contains(word) || CommonAdjectives.Contains(word)) return false;
+
         return CommonVerbs.Contains(word)
             || (word.Length > 4 && (word.EndsWith("ing", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ed", StringComparison.OrdinalIgnoreCase)
@@ -184,12 +258,14 @@ public sealed class GrammarColorAnalyzer
 
     private static bool IsAdverb(string word)
     {
-        return word is "very" or "quite" or "rather" or "often" or "always" or "never" or "soon" or "well" or "too"
+        return word is "very" or "quite" or "rather" or "often" or "always" or "never" or "soon" or "well" or "too" or "then" or "now" or "instead"
             || (word.Length > 4 && word.EndsWith("ly", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsAdjective(string word)
     {
+        if (CommonNouns.Contains(word) || CommonVerbs.Contains(word)) return false;
+
         return CommonAdjectives.Contains(word)
             || (word.Length > 4 && (word.EndsWith("ous", StringComparison.OrdinalIgnoreCase)
                 || word.EndsWith("ful", StringComparison.OrdinalIgnoreCase)
