@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-- Added a persisted Grammar Analysis mode toggle between **Logic & Traditional NLP** and **AI**.
-- Added OpenAI `2.12.0` Responses API integration using `gpt-5.4-mini` and `OPENAI_API_KEY`.
-- AI token classifications are validated and mapped back to the existing `GrammarAnalysis` category-count/span format; failures fall back to the local analyzer with an explicit warning.
-- Reduced unnecessary AI requests by using a longer AI debounce and reusing existing visual analysis when serializing RTF/recovery snapshots.
+- Expanded the grammar switch while retaining both original modes: **Logic & Traditional NLP** and **OpenAI**.
+- Added **Python spaCy**, **Python NLTK**, and **Google Cloud Natural Language** as additional direct grammar modes.
+- Added selectable Windows **Named Pipes** or **Shared Memory** IPC for persistent Python grammar workers.
+- Added `scripts/grammar_provider.py` and `scripts/setup-grammar-providers.ps1` for local Python provider setup.
+- Google Cloud syntax responses use UTF-16 offsets and are mapped back to the existing `GrammarAnalysis` category/span contract.
+- Provider failures are logged with known API keys redacted and automatically fall back to local grammar analysis for the current pass.
 
 ## 1.0.0 - 2026-08-06
 

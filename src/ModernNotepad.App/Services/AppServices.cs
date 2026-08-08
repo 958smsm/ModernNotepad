@@ -5,7 +5,7 @@ using ModernNotepad.Core.Structured;
 
 namespace ModernNotepad.App.Services;
 
-public sealed class AppServices
+public sealed class AppServices : IDisposable
 {
     private AppServices(
         SettingsService settingsService,
@@ -50,4 +50,6 @@ public sealed class AppServices
 
     public Task SaveSettingsAsync(CancellationToken cancellationToken = default) =>
         SettingsService.SaveAsync(Settings, cancellationToken);
+
+    public void Dispose() => AnalysisCoordinator.Dispose();
 }

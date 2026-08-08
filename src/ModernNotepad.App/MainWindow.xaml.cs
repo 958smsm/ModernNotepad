@@ -49,7 +49,7 @@ public partial class MainWindow : Window
     private bool _autoSaveRunning;
     private bool _allowWindowClose;
     private bool _windowCloseInProgress;
-    private bool _aiGrammarUnavailableMessageShown;
+    private bool _grammarProviderUnavailableMessageShown;
     private bool _updatingFormatControls;
     private bool _updatingFeatureToggles;
     private int _busyDepth;
@@ -144,14 +144,28 @@ public partial class MainWindow : Window
             DarkModeToggle.IsChecked = settings.Theme == AppThemeMode.Dark;
             SmartColoringMenuItem.IsChecked = settings.SmartColoringEnabled;
             SmartColorToggle.IsChecked = settings.SmartColoringEnabled;
-            var aiGrammar = settings.GrammarMode == GrammarAnalysisMode.AI;
-            GrammarAnalysisModeToggle.IsChecked = aiGrammar;
-            GrammarAnalysisModeToggleText.Text = aiGrammar
-                ? $"AI · {OpenAiGrammarAnalyzer.Model}"
-                : "Logic & Traditional NLP";
-            GrammarAnalysisModeHint.Text = aiGrammar
-                ? "Uses OpenAI for grammar categories; sends document text to the API and requires OPENAI_API_KEY."
-                : "Runs locally on this device with the existing grammar logic.";
+            var grammarMode = AnalysisCoordinator.ResolveConfiguredMode(settings);
+            SelectComboByTag(GrammarAnalysisModeQuickCombo, grammarMode.ToString());
+            SelectComboByTag(PythonTransportQuickCombo, settings.PythonTransport.ToString());
+            var isPythonMode = grammarMode is GrammarAnalysisMode.PythonSpacy
+                or GrammarAnalysisMode.PythonNltk;
+            PythonTransportQuickPanel.Visibility = isPythonMode
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            GrammarAnalysisModeHint.Text = grammarMode switch
+            {
+                GrammarAnalysisMode.Traditional =>
+                    "Runs locally on this device with the existing Logic & Traditional NLP analyzer.",
+                GrammarAnalysisMode.OpenAI =>
+                    "Uses the original OpenAI grammar analyzer and requires OPENAI_API_KEY.",
+                GrammarAnalysisMode.PythonSpacy =>
+                    $"spaCy runs locally in Python over {FormatPythonTransport(settings.PythonTransport)}.",
+                GrammarAnalysisMode.PythonNltk =>
+                    $"NLTK runs locally in Python over {FormatPythonTransport(settings.PythonTransport)}.",
+                GrammarAnalysisMode.GoogleCloudNaturalLanguage =>
+                    "Google Cloud Natural Language sends document text to the API and requires GOOGLE_CLOUD_NL_API_KEY or GOOGLE_API_KEY.",
+                _ => "Uses the selected grammar-analysis mode."
+            };
             DuplicateDetectionMenuItem.IsChecked = settings.DuplicateDetectionEnabled;
             DuplicateToggle.IsChecked = settings.DuplicateDetectionEnabled;
         }
@@ -1092,8 +1106,8 @@ public partial class MainWindow : Window
 
         OperationStatusText.Text = "Analyzing…";
         await ActiveView.AnalyzeNowAsync();
-        OperationStatusText.Text = HasAiGrammarFallback(ActiveSession)
-            ? "AI grammar unavailable - using local analysis"
+        OperationStatusText.Text = HasGrammarProviderFallback(ActiveSession)
+            ? "Grammar analysis mode unavailable - using Traditional analysis"
             : "Analysis updated";
     }
 
@@ -1347,16 +1361,59 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void GrammarAnalysisMode_Click(object sender, RoutedEventArgs e)
+    private static void SelectComboByTag(ComboBox combo, string value)
     {
-        if (_updatingFeatureToggles)
+        combo.SelectedItem = combo.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(
+                Convert.ToString(item.Tag, System.Globalization.CultureInfo.InvariantCulture),
+                value,
+                StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string FormatPythonTransport(PythonGrammarTransport transport) => transport switch
+    {
+        PythonGrammarTransport.NamedPipes => "Named Pipes",
+        PythonGrammarTransport.SharedMemory => "Shared Memory",
+        _ => transport.ToString()
+    };
+
+    private async void PythonGrammarTransport_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingFeatureToggles
+            || PythonTransportQuickCombo.SelectedItem is not ComboBoxItem item
+            || !Enum.TryParse<PythonGrammarTransport>(
+                Convert.ToString(item.Tag, System.Globalization.CultureInfo.InvariantCulture),
+                ignoreCase: true,
+                out var transport))
         {
             return;
         }
 
-        Services.Settings.GrammarMode = GrammarAnalysisModeToggle.IsChecked == true
-            ? GrammarAnalysisMode.AI
-            : GrammarAnalysisMode.Traditional;
+        Services.Settings.PythonTransport = transport;
+        ApplySettingsToShell(scheduleAnalysis: false);
+        await Services.SaveSettingsAsync();
+        if (ActiveView is not null)
+        {
+            await ActiveView.AnalyzeNowAsync();
+        }
+    }
+
+    private async void GrammarAnalysisMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_updatingFeatureToggles
+            || GrammarAnalysisModeQuickCombo.SelectedItem is not ComboBoxItem item
+            || !Enum.TryParse<GrammarAnalysisMode>(
+                Convert.ToString(item.Tag, System.Globalization.CultureInfo.InvariantCulture),
+                ignoreCase: true,
+                out var mode)
+            || mode == GrammarAnalysisMode.Provider)
+        {
+            return;
+        }
+
+        Services.Settings.GrammarMode = mode;
+        Services.Settings.Normalize();
         ApplySettingsToShell(scheduleAnalysis: false);
         await Services.SaveSettingsAsync();
         if (ActiveView is not null)
@@ -1578,40 +1635,93 @@ public partial class MainWindow : Window
             SmartPanel.DataContext = ActiveSession;
             UpdateStatusBar();
             UpdateGrammarCounts();
-            ShowAiGrammarUnavailableIfNeeded();
+            ShowGrammarProviderUnavailableIfNeeded();
         }
     }
 
-    private void ShowAiGrammarUnavailableIfNeeded()
+    private void ShowGrammarProviderUnavailableIfNeeded()
     {
-        var fallback = GetAiGrammarFallback(ActiveSession);
+        var fallback = GetGrammarProviderFallback(ActiveSession);
         if (fallback is null)
         {
-            _aiGrammarUnavailableMessageShown = false;
+            _grammarProviderUnavailableMessageShown = false;
             return;
         }
 
-        OperationStatusText.Text = "AI grammar unavailable - using local analysis";
-        if (_aiGrammarUnavailableMessageShown)
+        OperationStatusText.Text = "Grammar analysis mode unavailable - using Traditional analysis";
+        if (_grammarProviderUnavailableMessageShown)
         {
             return;
         }
 
-        _aiGrammarUnavailableMessageShown = true;
-        MessageBox.Show(
-            this,
-            fallback.Message,
-            "AI grammar analysis unavailable",
-            MessageBoxButton.OK,
-            MessageBoxImage.Warning);
+        _grammarProviderUnavailableMessageShown = true;
+        var dialog = new Window
+        {
+            Title = "Grammar analysis unavailable",
+            Width = 500,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize,
+            WindowStyle = WindowStyle.ToolWindow
+        };
+
+        var stackPanel = new StackPanel { Margin = new Thickness(20) };
+        stackPanel.Children.Add(new TextBlock
+        {
+            Text = fallback.Message,
+            TextWrapping = TextWrapping.Wrap,
+            Margin = new Thickness(0, 0, 0, 20)
+        });
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
+        var copyBtn = new Button
+        {
+            Content = "Copy error message",
+            Margin = new Thickness(0, 0, 10, 0),
+            Padding = new Thickness(10, 4, 10, 4)
+        };
+        copyBtn.Click += (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText(fallback.Message);
+            }
+            catch
+            {
+                // Ignore transient clipboard locks
+            }
+        };
+        buttonPanel.Children.Add(copyBtn);
+
+        var okBtn = new Button
+        {
+            Content = "OK",
+            Width = 80,
+            Padding = new Thickness(10, 4, 10, 4),
+            IsDefault = true
+        };
+        okBtn.Click += (_, _) => dialog.DialogResult = true;
+        buttonPanel.Children.Add(okBtn);
+
+        stackPanel.Children.Add(buttonPanel);
+        dialog.Content = stackPanel;
+
+        System.Media.SystemSounds.Exclamation.Play();
+        dialog.ShowDialog();
     }
 
-    private static bool HasAiGrammarFallback(DocumentSession? session) =>
-        GetAiGrammarFallback(session) is not null;
+    private static bool HasGrammarProviderFallback(DocumentSession? session) =>
+        GetGrammarProviderFallback(session) is not null;
 
-    private static TextFinding? GetAiGrammarFallback(DocumentSession? session) =>
+    private static TextFinding? GetGrammarProviderFallback(DocumentSession? session) =>
         session?.Findings.FirstOrDefault(finding =>
-            finding.Id == AnalysisCoordinator.AiFallbackFindingId);
+            finding.Id == AnalysisCoordinator.ProviderFallbackFindingId);
 
     private async void RecentFile_Click(object sender, RoutedEventArgs e)
     {
@@ -1679,7 +1789,7 @@ public partial class MainWindow : Window
         MessageBox.Show(
             this,
             "Modern Notepad\n\nA lightweight, offline-first WPF editor for Windows desktop.\n\n" +
-            "Rich formatting is saved in RTF. Smart Coloring and writing analysis are optional and run locally.",
+            "Rich formatting is saved in RTF. Smart Coloring and writing analysis are optional; grammar can use local, Python, or Google Cloud providers.",
             "About Modern Notepad",
             MessageBoxButton.OK,
             MessageBoxImage.Information);

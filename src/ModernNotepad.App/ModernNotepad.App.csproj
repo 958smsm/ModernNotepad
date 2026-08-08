@@ -11,11 +11,21 @@
     <RuntimeIdentifiers>win-x64;win-arm64</RuntimeIdentifiers>
     <Product>Modern Notepad</Product>
     <Company>Modern Notepad Contributors</Company>
-    <Description>Offline-first rich text editor with optional local or OpenAI grammar analysis.</Description>
+    <Description>Offline-first rich text editor with switchable Traditional, OpenAI, Python, or Google Cloud grammar analysis.</Description>
     <Version>1.0.0</Version>
     <PublishTrimmed>false</PublishTrimmed>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\ModernNotepad.Core\ModernNotepad.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\scripts\grammar_provider.py"
+             Link="grammar_provider.py"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\scripts\setup-grammar-providers.ps1"
+             Link="setup-grammar-providers.ps1"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

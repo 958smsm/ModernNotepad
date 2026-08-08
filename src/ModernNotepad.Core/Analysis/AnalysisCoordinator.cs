@@ -2,27 +2,34 @@ using ModernNotepad.Core.Models;
 
 namespace ModernNotepad.Core.Analysis;
 
-public sealed class AnalysisCoordinator
+public sealed class AnalysisCoordinator : IDisposable
 {
-    public const string AiFallbackFindingId = "grammar-analysis:ai-fallback";
-    private const long MaxAiErrorLogBytes = 1_000_000;
-    private static readonly object AiErrorLogGate = new();
+    public const string ProviderFallbackFindingId = "grammar-analysis:provider-fallback";
+    public const string AiFallbackFindingId = ProviderFallbackFindingId;
+    private const long MaxProviderErrorLogBytes = 1_000_000;
+    private static readonly object ProviderErrorLogGate = new();
 
     private readonly GrammarColorAnalyzer _grammarAnalyzer = new();
     private readonly OpenAiGrammarAnalyzer _openAiGrammarAnalyzer = new();
+    private readonly PythonGrammarAnalyzer _spacyGrammarAnalyzer = new(PythonGrammarEngine.Spacy);
+    private readonly PythonGrammarAnalyzer _nltkGrammarAnalyzer = new(PythonGrammarEngine.Nltk);
+    private readonly GoogleCloudGrammarAnalyzer _googleCloudGrammarAnalyzer = new();
     private readonly TextStatisticsAnalyzer _statisticsAnalyzer = new();
     private readonly DuplicateDetector _duplicateDetector = new();
     private readonly WritingAssistantAnalyzer _writingAssistantAnalyzer = new();
+    private bool _disposed;
 
     public async Task<DocumentAnalysis> AnalyzeAsync(
         string text,
         AppSettings settings,
         CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (settings.GrammarMode == GrammarAnalysisMode.Traditional)
+        var mode = ResolveConfiguredMode(settings);
+        if (mode == GrammarAnalysisMode.Traditional)
         {
             return await Task.Run(
                 () => Analyze(text, settings, cancellationToken),
@@ -35,12 +42,32 @@ public sealed class AnalysisCoordinator
 
         GrammarAnalysis grammar;
         TextFinding? providerFinding = null;
+        var providerName = GetModeDisplayName(mode);
         try
         {
-            grammar = await _openAiGrammarAnalyzer.AnalyzeAsync(
-                text,
-                input.Tokens,
-                cancellationToken).ConfigureAwait(false);
+            grammar = mode switch
+            {
+                GrammarAnalysisMode.OpenAI => await _openAiGrammarAnalyzer.AnalyzeAsync(
+                    text,
+                    input.Tokens,
+                    cancellationToken).ConfigureAwait(false),
+                GrammarAnalysisMode.PythonSpacy => await _spacyGrammarAnalyzer.AnalyzeAsync(
+                    text,
+                    input.Tokens,
+                    settings.PythonTransport,
+                    cancellationToken).ConfigureAwait(false),
+                GrammarAnalysisMode.PythonNltk => await _nltkGrammarAnalyzer.AnalyzeAsync(
+                    text,
+                    input.Tokens,
+                    settings.PythonTransport,
+                    cancellationToken).ConfigureAwait(false),
+                GrammarAnalysisMode.GoogleCloudNaturalLanguage => await _googleCloudGrammarAnalyzer.AnalyzeAsync(
+                    text,
+                    input.Tokens,
+                    cancellationToken).ConfigureAwait(false),
+                _ => throw new InvalidOperationException(
+                    $"Unsupported grammar analysis mode '{mode}'.")
+            };
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -48,15 +75,15 @@ public sealed class AnalysisCoordinator
         }
         catch (Exception exception)
         {
-            // Keep the editor usable if credentials, connectivity, model access, or
-            // model output are unavailable. The warning makes the fallback explicit.
+            // Keep the editor usable when a provider dependency, IPC channel,
+            // credential, connection, model access, or response is unavailable.
             grammar = _grammarAnalyzer.Analyze(
                 text,
                 input.Tokens,
                 input.Sentences,
                 cancellationToken);
-            var logPath = TryWriteAiErrorLog(exception);
-            providerFinding = CreateAiFallbackFinding(exception, logPath);
+            var logPath = TryWriteProviderErrorLog(exception);
+            providerFinding = CreateProviderFallbackFinding(providerName, exception, logPath);
         }
 
         return await Task.Run(
@@ -69,10 +96,11 @@ public sealed class AnalysisCoordinator
         AppSettings settings,
         CancellationToken cancellationToken = default)
     {
+        ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(settings);
 
-        if (settings.GrammarMode == GrammarAnalysisMode.AI)
+        if (ResolveConfiguredMode(settings) != GrammarAnalysisMode.Traditional)
         {
             return AnalyzeAsync(text, settings, cancellationToken).GetAwaiter().GetResult();
         }
@@ -92,12 +120,56 @@ public sealed class AnalysisCoordinator
             cancellationToken);
     }
 
+    public static GrammarAnalysisMode ResolveConfiguredMode(AppSettings settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.GrammarMode != GrammarAnalysisMode.Provider)
+        {
+            return settings.GrammarMode;
+        }
+
+        return settings.GrammarProvider switch
+        {
+            GrammarAnalysisProvider.PythonSpacy => GrammarAnalysisMode.PythonSpacy,
+            GrammarAnalysisProvider.PythonNltk => GrammarAnalysisMode.PythonNltk,
+            GrammarAnalysisProvider.GoogleCloudNaturalLanguage => GrammarAnalysisMode.GoogleCloudNaturalLanguage,
+            _ => GrammarAnalysisMode.PythonSpacy
+        };
+    }
+
+    public static string GetModeDisplayName(GrammarAnalysisMode mode) => mode switch
+    {
+        GrammarAnalysisMode.Traditional => "Logic & Traditional NLP",
+        GrammarAnalysisMode.OpenAI => "OpenAI",
+        GrammarAnalysisMode.PythonSpacy => "Python spaCy",
+        GrammarAnalysisMode.PythonNltk => "Python NLTK",
+        GrammarAnalysisMode.GoogleCloudNaturalLanguage => GoogleCloudGrammarAnalyzer.DisplayName,
+        GrammarAnalysisMode.Provider => "Grammar provider",
+        _ => mode.ToString()
+    };
+
+    public static string GetProviderDisplayName(GrammarAnalysisProvider provider) => provider switch
+    {
+        GrammarAnalysisProvider.PythonSpacy => "Python spaCy",
+        GrammarAnalysisProvider.PythonNltk => "Python NLTK",
+        GrammarAnalysisProvider.GoogleCloudNaturalLanguage => GoogleCloudGrammarAnalyzer.DisplayName,
+        _ => provider.ToString()
+    };
+
     private static AnalysisInput Prepare(string text, CancellationToken cancellationToken) => new(
         TextTokenizer.Tokenize(text, cancellationToken),
         TextSegmentation.GetSentences(text, cancellationToken),
         TextSegmentation.GetParagraphs(text, cancellationToken));
-    internal static TextFinding CreateAiFallbackFinding(Exception exception, string? logPath)
+
+    internal static TextFinding CreateAiFallbackFinding(Exception exception, string? logPath) =>
+        CreateProviderFallbackFinding("OpenAI", exception, logPath);
+
+    internal static TextFinding CreateProviderFallbackFinding(
+        string providerName,
+        Exception exception,
+        string? logPath)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerName);
         ArgumentNullException.ThrowIfNull(exception);
 
         var rootCause = exception.GetBaseException();
@@ -108,18 +180,18 @@ public sealed class AnalysisCoordinator
         }
 
         var diagnosticLocation = string.IsNullOrWhiteSpace(logPath)
-            ? "The full traceback log could not be written."
-            : $"Full traceback log:\n{logPath}";
+            ? "The full provider error log could not be written."
+            : $"Full provider error log:\n{logPath}";
 
         return new TextFinding(
-            AiFallbackFindingId,
+            ProviderFallbackFindingId,
             FindingKind.Validation,
-            "AI grammar analysis failed, so Logic & Traditional NLP is being used for this pass." +
+            $"{providerName} grammar analysis failed, so Logic & Traditional NLP is being used for this pass." +
             $"\n\nError: {error}\n\n{diagnosticLocation}",
             Severity: FindingSeverity.Warning);
     }
 
-    private static string? TryWriteAiErrorLog(Exception exception)
+    private static string? TryWriteProviderErrorLog(Exception exception)
     {
         try
         {
@@ -128,13 +200,13 @@ public sealed class AnalysisCoordinator
                 "ModernNotepad");
             Directory.CreateDirectory(directory);
 
-            var path = Path.Combine(directory, "ai-grammar-error.log");
+            var path = Path.Combine(directory, "grammar-provider-error.log");
             var details = RedactKnownApiKeys(exception.ToString());
             var entry = $"{DateTimeOffset.Now:O}{Environment.NewLine}{details}{Environment.NewLine}{Environment.NewLine}";
 
-            lock (AiErrorLogGate)
+            lock (ProviderErrorLogGate)
             {
-                if (File.Exists(path) && new FileInfo(path).Length >= MaxAiErrorLogBytes)
+                if (File.Exists(path) && new FileInfo(path).Length >= MaxProviderErrorLogBytes)
                 {
                     File.WriteAllText(path, string.Empty);
                 }
@@ -153,24 +225,27 @@ public sealed class AnalysisCoordinator
 
     private static string RedactKnownApiKeys(string details)
     {
-        foreach (var target in new[]
-                 {
-                     EnvironmentVariableTarget.Process,
-                     EnvironmentVariableTarget.User,
-                     EnvironmentVariableTarget.Machine
-                 })
+        foreach (var name in new[] { "OPENAI_API_KEY", "GOOGLE_CLOUD_NL_API_KEY", "GOOGLE_API_KEY" })
         {
-            try
+            foreach (var target in new[]
+                     {
+                         EnvironmentVariableTarget.Process,
+                         EnvironmentVariableTarget.User,
+                         EnvironmentVariableTarget.Machine
+                     })
             {
-                var key = Environment.GetEnvironmentVariable("OPENAI_API_KEY", target);
-                if (!string.IsNullOrWhiteSpace(key))
+                try
                 {
-                    details = details.Replace(key, "[REDACTED]", StringComparison.Ordinal);
+                    var key = Environment.GetEnvironmentVariable(name, target);
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        details = details.Replace(key, "[REDACTED]", StringComparison.Ordinal);
+                    }
                 }
-            }
-            catch
-            {
-                // A restricted environment scope should not block error reporting.
+                catch
+                {
+                    // A restricted environment scope should not block error reporting.
+                }
             }
         }
 
@@ -223,7 +298,7 @@ public sealed class AnalysisCoordinator
         }
 
         var filteredFindings = findings
-            .Where(finding => finding.Id == AiFallbackFindingId
+            .Where(finding => finding.Id == ProviderFallbackFindingId
                 || !settings.IgnoredWarningIds.Contains(finding.Id))
             .GroupBy(finding => finding.Id)
             .Select(group => group.First())
@@ -240,6 +315,26 @@ public sealed class AnalysisCoordinator
             filteredFindings,
             coloredSpans,
             duplicateSpans.Take(settings.MaxVisualAnalysisSpans).ToArray());
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(AnalysisCoordinator));
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _spacyGrammarAnalyzer.Dispose();
+        _nltkGrammarAnalyzer.Dispose();
     }
 
     private sealed record AnalysisInput(

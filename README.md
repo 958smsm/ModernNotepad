@@ -1,6 +1,6 @@
 # Modern Notepad
 
-Modern Notepad is an offline-first Windows text editor built with WPF and .NET 10. It combines standard Notepad workflows with RTF formatting, tabs, recovery, structured-document fidelity, and selectable local or OpenAI grammar analysis.
+Modern Notepad is an offline-first Windows text editor built with WPF and .NET 10. It combines standard Notepad workflows with RTF formatting, tabs, recovery, structured-document fidelity, and selectable local, Python, or Google Cloud grammar analysis.
 
 The application targets Windows 10 and Windows 11 on x64 and Arm64. Microsoft currently requires Visual Studio 2026 version 18.0 or later for the .NET 10 SDK; command-line builds can use the .NET 10 SDK directly.
 
@@ -20,7 +20,7 @@ ModernNotepad.Core (UI-independent)
   └─ Cancellable text-analysis modules
        ├─ tokenizer and segmentation
        ├─ duplicate detector
-       ├─ grammar analyzer (local heuristic or OpenAI)
+       ├─ grammar analyzer (local heuristic or switchable provider)
        ├─ writing assistant
        └─ statistics and readability
 
@@ -61,7 +61,7 @@ See [Architecture](docs/ARCHITECTURE.md) for component boundaries and data flows
 
 ### Optional smart features
 
-- Debounced Smart Coloring with configurable colors for subjects/nouns, verbs, objects/nouns, adjectives, adverbs, pronouns, prepositions, conjunctions, interrogatives, and quantifiers. Grammar analysis can use the existing local logic or OpenAI `gpt-5.4-mini`.
+- Debounced Smart Coloring with configurable colors for subjects/nouns, verbs, objects/nouns, adjectives, adverbs, pronouns, prepositions, conjunctions, interrogatives, and quantifiers. Grammar analysis can use the existing local logic or a selectable Python spaCy, Python NLTK, or Google Cloud Natural Language provider.
 - Duplicate words in a sentence, frequent words by paragraph/document, and duplicate sentences.
 - Configurable repetition threshold, strict common-word checking, duplicate highlight color, and per-warning ignore.
 - Word, character, sentence, and paragraph counts; reading time; Flesch reading-ease estimate; grammatical-category counts.
@@ -96,15 +96,27 @@ dotnet --version
 
 The repository pins SDK feature band `10.0.302` in `global.json` and permits roll-forward to a newer installed .NET 10 feature band.
 
-### Optional AI grammar configuration
+### Optional grammar-analysis configuration
 
-Logic & Traditional NLP works without a network connection or API key. To use the AI grammar mode, provide your OpenAI API key through the environment before launching Modern Notepad, for example in PowerShell:
+The grammar-mode switch offers five choices: **Logic & Traditional NLP**, **OpenAI**, **Python spaCy**, **Python NLTK**, and **Google Cloud Natural Language**. Traditional mode works without a network connection, Python, or an API key.
+
+For **OpenAI**, keep the original configuration and set `OPENAI_API_KEY` before using that mode.
+
+For **Python spaCy** or **Python NLTK**, install the optional local dependencies once:
 
 ```powershell
-$env:OPENAI_API_KEY = "your-key-here"
+./scripts/setup-grammar-providers.ps1
 ```
 
-The app does not persist the API key in `settings.json`.
+The setup script installs spaCy, NLTK, `en_core_web_sm`, and NLTK's English perceptron tagger data. By default Modern Notepad launches `python`; set `MODERNNOTEPAD_PYTHON` to a specific `python.exe` if needed. The Python IPC transport can be switched between **Named Pipes** and **Shared Memory** in Settings or directly in the Grammar Analyzer panel.
+
+For **Google Cloud Natural Language**, enable the Cloud Natural Language API for your Google Cloud project and provide an API key before launching Modern Notepad:
+
+```powershell
+$env:GOOGLE_CLOUD_NL_API_KEY = "your-key-here"
+```
+
+`GOOGLE_API_KEY` is also accepted. Modern Notepad does not persist either key in `settings.json`.
 
 ## Build and run
 
@@ -169,7 +181,7 @@ Tests use isolated temporary directories and cover:
 - UTF-8 BOM, Windows-1252, special-character, mixed-line-ending, and atomic-save behavior.
 - Duplicate words, stop-word mode, thresholds, and duplicate sentences.
 - Counts, reading time, readability bounds, and grammar-category statistics.
-- AI grammar JSON/category contract parsing and token-to-span mapping without network calls.
+- Python-provider response mapping and Google Cloud syntax-response/token-offset mapping without network calls.
 - Settings round trips, grammar-mode persistence, numeric normalization, and corrupted settings recovery.
 - JSON formatting/error locations and YAML indentation checks.
 
@@ -187,7 +199,7 @@ The `samples/` directory contains:
 
 ## Local data and privacy
 
-By default, analysis is local. When AI grammar mode is selected, the current document text is sent to the OpenAI API for grammar-category classification. Settings, session state, and recovery snapshots are stored under:
+By default, analysis is local. Traditional mode is in-process, and Python spaCy/NLTK modes also stay on the machine while exchanging document text with a local worker over Named Pipes or Shared Memory. **OpenAI** and **Google Cloud Natural Language** modes send document text to their respective network services. Settings, session state, and recovery snapshots are stored under:
 
 ```text
 %LOCALAPPDATA%\ModernNotepad\
@@ -197,7 +209,7 @@ Recovery content is unencrypted local application data. Do not rely on it as a s
 
 ## Important limitations
 
-- Logic & Traditional NLP grammar categories and grammar/passive-voice checks are deterministic English-language heuristics. AI grammar mode uses OpenAI `gpt-5.4-mini` for the same category contract and may also be wrong. AI mode requires `OPENAI_API_KEY` and sends document text to the OpenAI API; other writing-assistance checks remain local.
+- Logic & Traditional NLP grammar categories and grammar/passive-voice checks are deterministic English-language heuristics. OpenAI, spaCy, NLTK, and Google Cloud classification can also be wrong for ambiguous, fragmented, specialized, or unsupported-language text. OpenAI and Google Cloud modes require API credentials and send document text to their respective services; other writing-assistance checks remain local.
 - YAML validation intentionally performs safe indentation checks only; a full YAML parser/schema engine is planned as an optional adapter.
 - JSON/XML formatting normalizes whitespace by design. Ordinary save operations preserve text exactly apart from user edits and restored line-ending choices.
 - WPF `RichTextBox` is optimized for formatted editing, not multi-gigabyte files. The UI yields while loading and cancels analysis, but a future virtualized plain-text editor is planned for extremely large documents.

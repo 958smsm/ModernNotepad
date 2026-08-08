@@ -48,7 +48,7 @@ All state is under `%LOCALAPPDATA%\ModernNotepad`.
 
 #### Analysis pipeline
 
-`AnalysisCoordinator` is the module façade. A debounced editor pass captures text on the UI thread. Logic & Traditional NLP analysis runs through `Task.Run`; AI grammar mode calls the OpenAI Responses API asynchronously and then merges the result back into the same analysis contract.
+`AnalysisCoordinator` is the module façade. A debounced editor pass captures text on the UI thread. Logic & Traditional NLP analysis runs through `Task.Run`; OpenAI, Python spaCy, Python NLTK, and Google Cloud Natural Language modes dispatch asynchronously and merge the result back into the same analysis contract. External-mode failures produce a warning and fall back to the local analyzer for that pass.
 
 ```text
 text
@@ -58,7 +58,9 @@ text
  │   └─ paragraphs               │
  ├─ Grammar provider             ├─> TextStatisticsAnalyzer
  │   ├─ GrammarColorAnalyzer     │
- │   └─ OpenAiGrammarAnalyzer    │
+ │   ├─ PythonGrammarAnalyzer    │
+ │   │   └─ grammar_provider.py  │
+ │   └─ GoogleCloudGrammarAnalyzer
  ├─ DuplicateDetector            │
  └─ WritingAssistantAnalyzer ────┘
                     |
@@ -106,7 +108,7 @@ MSTest tests only the core project. This keeps tests fast and runnable without a
 
 The following can be replaced without rewriting the shell:
 
-- The grammar provider: `GrammarColorAnalyzer` supplies the existing local logic and `OpenAiGrammarAnalyzer` supplies optional OpenAI classification while returning the same `GrammarAnalysis` structure.
+- The grammar provider: `GrammarColorAnalyzer` supplies the existing local logic; `PythonGrammarAnalyzer` supplies spaCy/NLTK through selectable Named Pipes or Shared Memory; `GoogleCloudGrammarAnalyzer` maps Google syntax tokens into the same `GrammarAnalysis` structure.
 - `WritingAssistantAnalyzer` with language-specific providers.
 - YAML validation with an adapter around a full parser.
 - `FormattingOverlayManager` with a non-mutating adorner renderer.
@@ -115,4 +117,4 @@ The following can be replaced without rewriting the shell:
 
 ## Dependency policy
 
-Runtime dependencies are intentionally minimal. OpenAI `2.12.0` is used only when AI grammar mode is selected; Logic & Traditional NLP remains local and requires no cloud service. Test packages are Microsoft Test SDK/MSTest.
+Managed runtime dependencies are intentionally minimal; the core project has no provider NuGet package. Logic & Traditional NLP requires no external runtime. spaCy/NLTK are optional Python dependencies installed by `scripts/setup-grammar-providers.ps1`; Google Cloud is called through its HTTPS REST API. Test packages are Microsoft Test SDK/MSTest.

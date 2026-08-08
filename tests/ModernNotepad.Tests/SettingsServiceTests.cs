@@ -39,19 +39,24 @@ public sealed class SettingsServiceTests
         settings.DefaultFontFamily = "Consolas";
         settings.DefaultFontSize = 18;
         settings.SmartColoringEnabled = true;
-        settings.GrammarMode = GrammarAnalysisMode.AI;
+        settings.GrammarMode = GrammarAnalysisMode.GoogleCloudNaturalLanguage;
+        settings.PythonTransport = PythonGrammarTransport.SharedMemory;
         settings.DuplicateThreshold = 5;
         settings.GrammarColors[GrammarCategory.Verb] = "#123456";
         settings.RecentFiles.Add(Path.Combine(_directory, "sample.txt"));
 
         await service.SaveAsync(settings);
+        var savedJson = await File.ReadAllTextAsync(service.SettingsPath);
         var loaded = await service.LoadAsync();
 
+        StringAssert.Contains(savedJson, "\"GrammarMode\": \"GoogleCloudNaturalLanguage\"");
         Assert.AreEqual(ThemeMode.Dark, loaded.Theme);
         Assert.AreEqual("Consolas", loaded.DefaultFontFamily);
         Assert.AreEqual(18d, loaded.DefaultFontSize);
         Assert.IsTrue(loaded.SmartColoringEnabled);
-        Assert.AreEqual(GrammarAnalysisMode.AI, loaded.GrammarMode);
+        Assert.AreEqual(GrammarAnalysisMode.GoogleCloudNaturalLanguage, loaded.GrammarMode);
+        Assert.AreEqual(GrammarAnalysisProvider.GoogleCloudNaturalLanguage, loaded.GrammarProvider);
+        Assert.AreEqual(PythonGrammarTransport.SharedMemory, loaded.PythonTransport);
         Assert.AreEqual(5, loaded.DuplicateThreshold);
         Assert.AreEqual("#123456", loaded.GrammarColors[GrammarCategory.Verb]);
         Assert.AreEqual(1, loaded.RecentFiles.Count);
@@ -79,6 +84,8 @@ public sealed class SettingsServiceTests
             AutoSaveIntervalSeconds = 1,
             DuplicateThreshold = 500,
             GrammarMode = (GrammarAnalysisMode)999,
+            GrammarProvider = (GrammarAnalysisProvider)999,
+            PythonTransport = (PythonGrammarTransport)999,
             GrammarColors = new Dictionary<GrammarCategory, string>()
         };
 
@@ -88,8 +95,54 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(5, settings.AutoSaveIntervalSeconds);
         Assert.AreEqual(100, settings.DuplicateThreshold);
         Assert.AreEqual(GrammarAnalysisMode.Traditional, settings.GrammarMode);
+        Assert.AreEqual(GrammarAnalysisProvider.PythonSpacy, settings.GrammarProvider);
+        Assert.AreEqual(PythonGrammarTransport.NamedPipes, settings.PythonTransport);
         Assert.IsTrue(settings.GrammarColors.ContainsKey(GrammarCategory.Verb));
     }
+
+    [TestMethod]
+    public async Task Load_LegacyAiGrammarModeMapsToOpenAi()
+    {
+        var service = new SettingsService(_directory);
+        await File.WriteAllTextAsync(service.SettingsPath, """{"GrammarMode":"AI"}""");
+
+        var loaded = await service.LoadAsync();
+
+        Assert.AreEqual(GrammarAnalysisMode.OpenAI, loaded.GrammarMode);
+        Assert.IsNull(service.LastLoadWarning);
+    }
+
+    [TestMethod]
+    public async Task Load_IntermediateProviderModeMapsToDirectProviderMode()
+    {
+        var service = new SettingsService(_directory);
+        await File.WriteAllTextAsync(
+            service.SettingsPath,
+            """{"GrammarMode":"Provider","GrammarProvider":"PythonNltk","PythonTransport":"SharedMemory"}""");
+
+        var loaded = await service.LoadAsync();
+
+        Assert.AreEqual(GrammarAnalysisMode.PythonNltk, loaded.GrammarMode);
+        Assert.AreEqual(GrammarAnalysisProvider.PythonNltk, loaded.GrammarProvider);
+        Assert.AreEqual(PythonGrammarTransport.SharedMemory, loaded.PythonTransport);
+        Assert.IsNull(service.LastLoadWarning);
+    }
+
+    [TestMethod]
+    public async Task SaveAndLoad_OpenAiModePersists()
+    {
+        var service = new SettingsService(_directory);
+        var settings = AppSettings.CreateDefaults();
+        settings.GrammarMode = GrammarAnalysisMode.OpenAI;
+
+        await service.SaveAsync(settings);
+        var savedJson = await File.ReadAllTextAsync(service.SettingsPath);
+        var loaded = await service.LoadAsync();
+
+        StringAssert.Contains(savedJson, "\"GrammarMode\": \"OpenAI\"");
+        Assert.AreEqual(GrammarAnalysisMode.OpenAI, loaded.GrammarMode);
+    }
+
     [TestMethod]
     public async Task Load_NullCollectionsAreNormalizedSafely()
     {

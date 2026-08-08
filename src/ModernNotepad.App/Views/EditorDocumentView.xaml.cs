@@ -71,9 +71,10 @@ public partial class EditorDocumentView : UserControl
 
         SetWordWrap(Services.Settings.WordWrap);
         ApplyZoom(session.ZoomPercent);
-        _analysisTimer.Interval = Services.Settings.GrammarMode == ModernNotepad.Core.Models.GrammarAnalysisMode.AI
-            ? TimeSpan.FromMilliseconds(1500)
-            : TimeSpan.FromMilliseconds(650);
+        _analysisTimer.Interval = ModernNotepad.Core.Analysis.AnalysisCoordinator.ResolveConfiguredMode(Services.Settings)
+            == ModernNotepad.Core.Models.GrammarAnalysisMode.Traditional
+                ? TimeSpan.FromMilliseconds(650)
+                : TimeSpan.FromMilliseconds(1500);
 
         try
         {

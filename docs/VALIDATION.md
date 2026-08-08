@@ -1,6 +1,6 @@
 # Validation report
 
-Validation date: 2026-08-06
+Validation date: 2026-08-08
 
 This report distinguishes checks that were completed in the artifact environment from checks that require a Windows machine with the .NET desktop toolchain.
 
@@ -25,17 +25,18 @@ The following version references were also checked against current Microsoft/NuG
 - `Microsoft.NET.Test.Sdk` `18.8.1`.
 - `MSTest.TestAdapter` and `MSTest.TestFramework` `4.3.3`.
 
-## Grammar-analysis mode change — 2026-08-08
+## Grammar-mode expansion — 2026-08-08
 
-The Traditional/AI grammar-mode change received an additional static validation pass in this artifact environment:
+The grammar-mode enhancement received an additional validation pass in this artifact environment:
 
-- `MainWindow.xaml`, `SettingsWindow.xaml`, project files, and central package props parse as XML.
-- New XAML names/event wiring were checked against the code-behind (`GrammarAnalysisMode_Click` and the named mode controls).
-- The AI adapter validates a token-to-category JSON map, requires every requested token ID exactly once, rejects unknown categories, and maps IDs back to the existing `GrammarAnalysis` spans/counts contract.
-- No-network unit tests were added for AI response parsing, duplicate-token rejection, and the shared grammar-output contract.
-- Settings round-trip coverage now includes the persisted grammar mode.
+- `MainWindow.xaml`, `SettingsWindow.xaml`, and the edited project files parse as XML.
+- The new Python worker passes `python -m py_compile`.
+- The worker's UTF-16-to-Python offset conversion was smoke-tested with non-BMP text.
+- spaCy/NLTK dependency failures were exercised in the available Python environment and return actionable setup errors instead of crashing the worker protocol.
+- No-network unit tests cover the restored OpenAI response helpers, Python worker response mapping, Google Cloud syntax-response mapping, API-key resolution, and mode/transport settings persistence.
+- The settings model normalizes invalid mode/provider/transport enum values, migrates the original saved `"AI"` value to `OpenAI`, and migrates the intermediate `"Provider"` + `GrammarProvider` format to the equivalent direct Python/Google mode.
 
-The environment still does not contain the .NET SDK/MSBuild, so the updated source and tests were **not compiled or executed here**. Run the Windows/.NET commands below for the definitive build and test result.
+The environment still does not contain the .NET SDK/MSBuild, so the updated C# source and MSTest suite were **not compiled or executed here**. The Windows/.NET commands below remain the definitive build and test result.
 
 ## Checks that require Windows
 

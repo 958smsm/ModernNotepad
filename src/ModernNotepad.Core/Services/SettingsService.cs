@@ -21,6 +21,7 @@ public sealed class SettingsService
             WriteIndented = true,
             PropertyNameCaseInsensitive = true
         };
+        _jsonOptions.Converters.Add(new GrammarAnalysisModeJsonConverter());
         _jsonOptions.Converters.Add(new JsonStringEnumConverter());
     }
 
@@ -81,6 +82,56 @@ public sealed class SettingsService
         finally
         {
             _gate.Release();
+        }
+    }
+
+    private sealed class GrammarAnalysisModeJsonConverter : JsonConverter<GrammarAnalysisMode>
+    {
+        public override GrammarAnalysisMode Read(
+            ref Utf8JsonReader reader,
+            Type typeToConvert,
+            JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String)
+            {
+                var value = reader.GetString();
+                if (string.Equals(value, "AI", StringComparison.OrdinalIgnoreCase))
+                {
+                    return GrammarAnalysisMode.OpenAI;
+                }
+
+                if (Enum.TryParse<GrammarAnalysisMode>(value, ignoreCase: true, out var mode)
+                    && Enum.IsDefined(typeof(GrammarAnalysisMode), mode))
+                {
+                    return mode;
+                }
+
+                throw new JsonException($"Unknown grammar analysis mode '{value}'.");
+            }
+
+            if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out var numericValue))
+            {
+                return (GrammarAnalysisMode)numericValue;
+            }
+
+            throw new JsonException("Grammar analysis mode must be a string or integer.");
+        }
+
+        public override void Write(
+            Utf8JsonWriter writer,
+            GrammarAnalysisMode value,
+            JsonSerializerOptions options)
+        {
+            writer.WriteStringValue(value switch
+            {
+                GrammarAnalysisMode.Traditional => "Traditional",
+                GrammarAnalysisMode.OpenAI => "OpenAI",
+                GrammarAnalysisMode.PythonSpacy => "PythonSpacy",
+                GrammarAnalysisMode.PythonNltk => "PythonNltk",
+                GrammarAnalysisMode.GoogleCloudNaturalLanguage => "GoogleCloudNaturalLanguage",
+                GrammarAnalysisMode.Provider => "Provider",
+                _ => "Traditional"
+            });
         }
     }
 

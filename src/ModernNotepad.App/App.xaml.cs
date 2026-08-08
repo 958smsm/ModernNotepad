@@ -40,6 +40,16 @@ public partial class App : Application
         }
     }
 
+    protected override void OnExit(ExitEventArgs e)
+    {
+        if (Services is not null)
+        {
+            Services.Dispose();
+        }
+
+        base.OnExit(e);
+    }
+
     private static string? TryWriteStartupErrorLog(Exception exception)
     {
         try

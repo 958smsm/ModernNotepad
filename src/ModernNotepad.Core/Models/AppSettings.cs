@@ -10,8 +10,28 @@ public enum ThemeMode
 
 public enum GrammarAnalysisMode
 {
-    Traditional,
-    AI
+    Traditional = 0,
+    OpenAI = 1,
+    PythonSpacy = 2,
+    PythonNltk = 3,
+    GoogleCloudNaturalLanguage = 4,
+
+    // Compatibility-only value used to migrate settings written by the
+    // intermediate provider-mode build. Normalize() converts it immediately.
+    Provider = 5
+}
+
+public enum GrammarAnalysisProvider
+{
+    PythonSpacy,
+    PythonNltk,
+    GoogleCloudNaturalLanguage
+}
+
+public enum PythonGrammarTransport
+{
+    NamedPipes,
+    SharedMemory
 }
 
 public sealed class AppSettings
@@ -23,6 +43,8 @@ public sealed class AppSettings
     public int AutoSaveIntervalSeconds { get; set; } = 30;
     public bool SmartColoringEnabled { get; set; }
     public GrammarAnalysisMode GrammarMode { get; set; } = GrammarAnalysisMode.Traditional;
+    public GrammarAnalysisProvider GrammarProvider { get; set; } = GrammarAnalysisProvider.PythonSpacy;
+    public PythonGrammarTransport PythonTransport { get; set; } = PythonGrammarTransport.NamedPipes;
     public bool DuplicateDetectionEnabled { get; set; }
     public int DuplicateThreshold { get; set; } = 3;
     public bool StrictDuplicateChecking { get; set; }
@@ -63,10 +85,40 @@ public sealed class AppSettings
         DuplicateThreshold = Math.Clamp(DuplicateThreshold, 2, 100);
         LongSentenceWordThreshold = Math.Clamp(LongSentenceWordThreshold, 10, 200);
         MaxVisualAnalysisSpans = Math.Clamp(MaxVisualAnalysisSpans, 100, 10000);
+        if (!Enum.IsDefined(typeof(GrammarAnalysisProvider), GrammarProvider))
+        {
+            GrammarProvider = GrammarAnalysisProvider.PythonSpacy;
+        }
+        if (!Enum.IsDefined(typeof(PythonGrammarTransport), PythonTransport))
+        {
+            PythonTransport = PythonGrammarTransport.NamedPipes;
+        }
         if (!Enum.IsDefined(typeof(GrammarAnalysisMode), GrammarMode))
         {
             GrammarMode = GrammarAnalysisMode.Traditional;
         }
+        else if (GrammarMode == GrammarAnalysisMode.Provider)
+        {
+            // Migrate settings written by the earlier two-level
+            // Provider + GrammarProvider selector to the direct mode selector.
+            GrammarMode = GrammarProvider switch
+            {
+                GrammarAnalysisProvider.PythonSpacy => GrammarAnalysisMode.PythonSpacy,
+                GrammarAnalysisProvider.PythonNltk => GrammarAnalysisMode.PythonNltk,
+                GrammarAnalysisProvider.GoogleCloudNaturalLanguage => GrammarAnalysisMode.GoogleCloudNaturalLanguage,
+                _ => GrammarAnalysisMode.PythonSpacy
+            };
+        }
+
+        // Keep the legacy provider property synchronized so older builds can
+        // still understand settings after a downgrade.
+        GrammarProvider = GrammarMode switch
+        {
+            GrammarAnalysisMode.PythonSpacy => GrammarAnalysisProvider.PythonSpacy,
+            GrammarAnalysisMode.PythonNltk => GrammarAnalysisProvider.PythonNltk,
+            GrammarAnalysisMode.GoogleCloudNaturalLanguage => GrammarAnalysisProvider.GoogleCloudNaturalLanguage,
+            _ => GrammarProvider
+        };
 
         SpellCheckLanguage = string.IsNullOrWhiteSpace(SpellCheckLanguage)
             ? "en-US"
@@ -108,6 +160,8 @@ public sealed class AppSettings
             AutoSaveIntervalSeconds = AutoSaveIntervalSeconds,
             SmartColoringEnabled = SmartColoringEnabled,
             GrammarMode = GrammarMode,
+            GrammarProvider = GrammarProvider,
+            PythonTransport = this.PythonTransport,
             DuplicateDetectionEnabled = DuplicateDetectionEnabled,
             DuplicateThreshold = DuplicateThreshold,
             StrictDuplicateChecking = StrictDuplicateChecking,
@@ -139,6 +193,8 @@ public sealed class AppSettings
         AutoSaveIntervalSeconds = copy.AutoSaveIntervalSeconds;
         SmartColoringEnabled = copy.SmartColoringEnabled;
         GrammarMode = copy.GrammarMode;
+        GrammarProvider = copy.GrammarProvider;
+        PythonTransport = copy.PythonTransport;
         DuplicateDetectionEnabled = copy.DuplicateDetectionEnabled;
         DuplicateThreshold = copy.DuplicateThreshold;
         StrictDuplicateChecking = copy.StrictDuplicateChecking;

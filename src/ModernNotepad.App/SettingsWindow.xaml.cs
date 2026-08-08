@@ -64,8 +64,9 @@ public partial class SettingsWindow : Window
             AccentColorTextBox.Text = settings.AccentColor;
 
             SmartColoringCheckBox.IsChecked = settings.SmartColoringEnabled;
-            TraditionalGrammarRadioButton.IsChecked = settings.GrammarMode == GrammarAnalysisMode.Traditional;
-            AiGrammarRadioButton.IsChecked = settings.GrammarMode == GrammarAnalysisMode.AI;
+            SelectComboByTag(GrammarModeCombo, AnalysisCoordinator.ResolveConfiguredMode(settings).ToString());
+            SelectComboByTag(PythonTransportCombo, settings.PythonTransport.ToString());
+            UpdateGrammarModeControls();
             DuplicateDetectionCheckBox.IsChecked = settings.DuplicateDetectionEnabled;
             SmartPanelCheckBox.IsChecked = settings.SmartPanelVisible;
             DuplicateThresholdTextBox.Text = settings.DuplicateThreshold.ToString(CultureInfo.CurrentCulture);
@@ -104,6 +105,33 @@ public partial class SettingsWindow : Window
         GeneralPage.Visibility = tag == "General" ? Visibility.Visible : Visibility.Collapsed;
         AppearancePage.Visibility = tag == "Appearance" ? Visibility.Visible : Visibility.Collapsed;
         SmartFeaturesPage.Visibility = tag == "Smart" ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void GrammarModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!_loading)
+        {
+            UpdateGrammarModeControls();
+        }
+    }
+
+    private void UpdateGrammarModeControls()
+    {
+        if (GrammarModeCombo is null || PythonTransportSettingsPanel is null)
+        {
+            return;
+        }
+
+        var mode = Enum.TryParse<GrammarAnalysisMode>(
+            ComboTagOrText(GrammarModeCombo),
+            ignoreCase: true,
+            out var selectedMode)
+                ? selectedMode
+                : GrammarAnalysisMode.Traditional;
+        PythonTransportSettingsPanel.Visibility = mode is GrammarAnalysisMode.PythonSpacy
+            or GrammarAnalysisMode.PythonNltk
+                ? Visibility.Visible
+                : Visibility.Collapsed;
     }
 
     private static string GetGrammarColor(AppSettings settings, GrammarCategory category) =>
@@ -205,9 +233,19 @@ public partial class SettingsWindow : Window
         result.AccentColor = AccentColorTextBox.Text.Trim();
 
         result.SmartColoringEnabled = SmartColoringCheckBox.IsChecked == true;
-        result.GrammarMode = AiGrammarRadioButton.IsChecked == true
-            ? GrammarAnalysisMode.AI
-            : GrammarAnalysisMode.Traditional;
+        result.GrammarMode = Enum.TryParse<GrammarAnalysisMode>(
+            ComboTagOrText(GrammarModeCombo),
+            ignoreCase: true,
+            out var grammarMode)
+                && grammarMode != GrammarAnalysisMode.Provider
+                    ? grammarMode
+                    : GrammarAnalysisMode.Traditional;
+        result.PythonTransport = Enum.TryParse<PythonGrammarTransport>(
+            ComboTagOrText(PythonTransportCombo),
+            ignoreCase: true,
+            out var pythonTransport)
+                ? pythonTransport
+                : PythonGrammarTransport.NamedPipes;
         result.DuplicateDetectionEnabled = DuplicateDetectionCheckBox.IsChecked == true;
         result.SmartPanelVisible = SmartPanelCheckBox.IsChecked == true;
         result.DuplicateThreshold = duplicateThreshold;
