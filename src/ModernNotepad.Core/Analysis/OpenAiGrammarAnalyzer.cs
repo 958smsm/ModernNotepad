@@ -202,7 +202,9 @@ Allowed categories, exactly as written:
 - Preposition
 - Conjunction
 - Interrogative: interrogative words such as who/what/where/when/why/how when used interrogatively
-- Quantifier: articles, determiners, and quantifiers
+- Determiner: articles and non-quantifying determiners (for example the, a, an, this, my)
+- Quantifier: words expressing amount or scope (for example many, few, several, all, each)
+- Particle: infinitival to and verb particles in phrasal verbs
 - Other: a target token that genuinely fits none of the categories above
 
 Return JSON only as one token-to-category object. Each property name must be a target token ID and each value must be one allowed category.

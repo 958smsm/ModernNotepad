@@ -6,14 +6,14 @@ Smart features are optional, debounced, cancellable, and advisory. Writing-assis
 
 Grammar analysis has five directly selectable modes. All return the same `GrammarAnalysis` contract: `ColoredSpan` entries plus counts keyed by `GrammarCategory`.
 
-**Logic & Traditional NLP** uses `GrammarColorAnalyzer` with small built-in dictionaries and suffix/context rules. It is immediate, offline, and requires no external runtime.
+**Logic & Traditional NLP** uses `GrammarColorAnalyzer`, a deterministic sentence/clause-aware classifier. It combines the built-in lexicon with contextual verb scoring, explicit determiner/quantifier/particle classes, participle/gerund handling, relative/content-clause cues, wh-subordinator disambiguation, contractions, inversion, coordination, copular complements, and subject/object role inference. Token-to-sentence alignment and relative-clause context are computed in forward/precomputed passes, with bounded local ambiguity probes, so large documents are not repeatedly rescanned. It is offline and requires no external runtime.
 
 **OpenAI** — preserves the original `OpenAiGrammarAnalyzer` behavior and uses `OPENAI_API_KEY`.
 
 The additional modes are:
 
 - **Python spaCy** — `PythonGrammarAnalyzer` starts a persistent Python worker and uses spaCy POS/dependency annotations. The IPC transport is selectable between Windows **Named Pipes** and named **Shared Memory**. The default model is `en_core_web_sm`; override it with `MODERNNOTEPAD_SPACY_MODEL`.
-- **Python NLTK** — the same persistent worker/IPC choices are used with NLTK `pos_tag`. Noun subject/object roles are inferred from the tagged sentence because NLTK's POS tagger does not provide dependency edges.
+- **Python NLTK** — the same persistent worker/IPC choices are used with batched NLTK sentence POS tagging. Noun subject/object roles are inferred from the tagged sentence because NLTK's POS tagger does not provide dependency edges.
 - **Google Cloud Natural Language** — `GoogleCloudGrammarAnalyzer` calls the v1 `documents:analyzeSyntax` endpoint with `UTF16` offsets, then maps returned POS/dependency data back to the editor's local token spans.
 
 Run `scripts/setup-grammar-providers.ps1` to install the optional Python packages, the spaCy English model, and NLTK's English perceptron tagger data. `MODERNNOTEPAD_PYTHON` can point to a specific `python.exe`; `MODERNNOTEPAD_GRAMMAR_WORKER` can override the worker script path.
@@ -40,7 +40,8 @@ Rules currently include:
 
 - a compact list of common English misspellings;
 - `could/should/would of` and `irregardless` suggestions;
-- simple `a`/`an` checks;
+- pronunciation-aware conservative `a`/`an` checks for common silent-h, consonant-sound vowel prefixes, and initialisms;
+- high-confidence pronoun/auxiliary subject–verb agreement checks;
 - multiple consecutive spaces;
 - lowercase sentence starts;
 - configurable long sentences;

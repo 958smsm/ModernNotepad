@@ -303,18 +303,20 @@ public sealed class AnalysisCoordinator : IDisposable
             .GroupBy(finding => finding.Id)
             .Select(group => group.First())
             .OrderBy(finding => finding.Span?.Start ?? int.MaxValue)
-            .Take(500)
             .ToArray();
 
+        // Keep the complete analysis result in the model. The WPF view applies
+        // MaxVisualAnalysisSpans only while rendering overlays, so export/copy,
+        // statistics, and downstream analysis are never silently truncated.
         var coloredSpans = settings.SmartColoringEnabled
-            ? grammar.Spans.Take(settings.MaxVisualAnalysisSpans).ToArray()
+            ? grammar.Spans.ToArray()
             : Array.Empty<ColoredSpan>();
 
         return new DocumentAnalysis(
             statistics,
             filteredFindings,
             coloredSpans,
-            duplicateSpans.Take(settings.MaxVisualAnalysisSpans).ToArray());
+            duplicateSpans);
     }
 
     private void ThrowIfDisposed()

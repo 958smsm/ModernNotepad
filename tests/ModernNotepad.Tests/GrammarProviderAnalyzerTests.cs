@@ -25,6 +25,22 @@ public sealed class GrammarProviderAnalyzerTests
     }
 
     [TestMethod]
+    public void PythonWorkerResponse_AcceptsExpandedFunctionWordTaxonomy()
+    {
+        const string text = "The model uses 3 tests to run.";
+        var tokens = TextTokenizer.Tokenize(text);
+        var response = Encoding.UTF8.GetBytes(
+            """{"ok":true,"assignments":["Determiner","SubjectNoun","Verb","Quantifier","ObjectNoun","Particle","Verb"]}""");
+
+        var analysis = PythonGrammarAnalyzer.ParseResponse(response, tokens);
+
+        Assert.AreEqual(tokens.Count, analysis.Counts.Values.Sum());
+        Assert.AreEqual(1, analysis.Counts[GrammarCategory.Determiner]);
+        Assert.AreEqual(1, analysis.Counts[GrammarCategory.Quantifier]);
+        Assert.AreEqual(1, analysis.Counts[GrammarCategory.Particle]);
+    }
+
+    [TestMethod]
     public void GoogleSyntaxResponse_UsesUtf16OffsetsAndDependencies()
     {
         const string text = "😀 Birds build nests.";

@@ -86,6 +86,8 @@ public partial class SettingsWindow : Window
             ConjunctionColorTextBox.Text = GetGrammarColor(settings, GrammarCategory.Conjunction);
             InterrogativeColorTextBox.Text = GetGrammarColor(settings, GrammarCategory.Interrogative);
             QuantifierColorTextBox.Text = GetGrammarColor(settings, GrammarCategory.Quantifier);
+            DeterminerColorTextBox.Text = GetGrammarColor(settings, GrammarCategory.Determiner);
+            ParticleColorTextBox.Text = GetGrammarColor(settings, GrammarCategory.Particle);
             UpdateAccentPreview();
         }
         finally
@@ -181,7 +183,9 @@ public partial class SettingsWindow : Window
             (PrepositionColorTextBox, "Preposition color"),
             (ConjunctionColorTextBox, "Conjunction color"),
             (InterrogativeColorTextBox, "Interrogative color"),
-            (QuantifierColorTextBox, "Quantifier color")
+            (QuantifierColorTextBox, "Quantifier color"),
+            (DeterminerColorTextBox, "Determiner color"),
+            (ParticleColorTextBox, "Particle color")
         };
         foreach (var input in colorInputs)
         {
@@ -264,6 +268,8 @@ public partial class SettingsWindow : Window
         result.GrammarColors[GrammarCategory.Conjunction] = ConjunctionColorTextBox.Text.Trim();
         result.GrammarColors[GrammarCategory.Interrogative] = InterrogativeColorTextBox.Text.Trim();
         result.GrammarColors[GrammarCategory.Quantifier] = QuantifierColorTextBox.Text.Trim();
+        result.GrammarColors[GrammarCategory.Determiner] = DeterminerColorTextBox.Text.Trim();
+        result.GrammarColors[GrammarCategory.Particle] = ParticleColorTextBox.Text.Trim();
         result.Normalize();
 
         ResultSettings = result;

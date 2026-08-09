@@ -98,7 +98,7 @@ The repository pins SDK feature band `10.0.302` in `global.json` and permits rol
 
 ### Optional grammar-analysis configuration
 
-The grammar-mode switch offers five choices: **Logic & Traditional NLP**, **OpenAI**, **Python spaCy**, **Python NLTK**, and **Google Cloud Natural Language**. Traditional mode works without a network connection, Python, or an API key.
+The grammar-mode switch offers five choices: **Logic & Traditional NLP**, **OpenAI**, **Python spaCy**, **Python NLTK**, and **Google Cloud Natural Language**. Traditional mode works without a network connection, Python, or an API key. The Traditional analyzer is sentence/clause-aware and uses contextual disambiguation for noun/verb/adjective ambiguity, subject/object roles, relative/content clauses, inversion, coordination, gerunds/participles, contractions, and function words. Articles/non-quantifying determiners have a dedicated **Determiner** category, while infinitival and recognized phrasal-verb particles have a dedicated **Particle** category; true amount/scope words remain **Quantifier**. Large-document analysis keeps complete core results while bounding only the number of WPF visual overlays.
 
 For **OpenAI**, keep the original configuration and set `OPENAI_API_KEY` before using that mode.
 

@@ -13,7 +13,7 @@ Current test groups:
 - **File operations**: UTF-8 BOM, Windows-1252, mixed CRLF/LF/CR preservation, special characters, and atomic replacement cleanup.
 - **Duplicate detection**: repeated words, stop-word behavior, strict mode, duplicate sentences, and configured thresholds.
 - **Text statistics**: word/character/sentence/paragraph counts, reading time, readability range, and grammar-category counts.
-- **Grammar providers**: Python worker response mapping, Google Cloud UTF-16 syntax-token mapping, provider-setting round trips, and the shared `GrammarAnalysis` category-count/span contract without making a network request.
+- **Grammar / providers**: Traditional-context regressions (relative/content clauses, inversion, passive-vs-stative participles, coordination, gerunds/progressives, demonstratives/complementizers, wh-subordinators, contractions, determiner/quantifier/particle distinctions, numeric forms, lexical ambiguity), 102,000-word no-drop stress coverage, Python worker response mapping, Google Cloud UTF-16 syntax-token mapping, provider-setting round trips, and the shared `GrammarAnalysis` category-count/span contract without making a network request.
 - **Settings**: serialization round trip, corruption fallback/preservation, bounds normalization, and default color repair.
 - **Structured text**: strict JSON parsing (including comment rejection), JSON error positions/formatting, XML declaration-preserving formatting, and YAML tab-indentation warnings.
 
@@ -47,7 +47,7 @@ Generate documents around 1 MB, 10 MB, and 50 MB. Measure:
 - peak working set;
 - save time and byte fidelity.
 
-Analysis is intentionally capped by `MaxVisualAnalysisSpans`; findings are capped at 500 per pass. For very large files, disable smart features. A future virtualized editor mode is the intended solution for much larger inputs.
+Core analysis is not truncated by `MaxVisualAnalysisSpans`; that setting limits only WPF overlay rendering. Findings are likewise retained instead of applying the old 500-item result cap. The automated suite includes a 102,000-token Traditional-analysis stress case. For multi-megabyte UI performance testing, continue measuring cancellation latency and peak working set because the editor itself is not a virtualized text surface.
 
 ## UI automation plan
 

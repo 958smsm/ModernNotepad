@@ -466,7 +466,9 @@ public partial class EditorDocumentView : UserControl
         _isApplyingVisuals = true;
         try
         {
-            var smartOverlays = analysis.ColoredSpans.Select(span =>
+            var smartOverlays = analysis.ColoredSpans
+                .Take(Services.Settings.MaxVisualAnalysisSpans)
+                .Select(span =>
             {
                 var colorText = Services.Settings.GrammarColors.TryGetValue(span.Category, out var configured)
                     ? configured
@@ -481,7 +483,9 @@ public partial class EditorDocumentView : UserControl
             _duplicateOverlay.Apply(
                 Editor,
                 snapshot,
-                analysis.DuplicateSpans.Select(span => (span, (object)duplicateBrush)));
+                analysis.DuplicateSpans
+                    .Take(Services.Settings.MaxVisualAnalysisSpans)
+                    .Select(span => (span, (object)duplicateBrush)));
         }
         finally
         {

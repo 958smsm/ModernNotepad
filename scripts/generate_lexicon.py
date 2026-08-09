@@ -42,7 +42,7 @@ tag_map = {
     'PRON': 'GrammarCategory.Pronoun',
     'ADP': 'GrammarCategory.Preposition',
     'CONJ': 'GrammarCategory.Conjunction',
-    'DET': 'GrammarCategory.Quantifier'
+    'DET': 'GrammarCategory.Determiner'
 }
 
 print("Generating C# dictionary...")

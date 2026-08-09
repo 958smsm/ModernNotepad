@@ -33,7 +33,15 @@ public sealed class TextStatisticsAnalyzer
         var wordCount = tokens.Count;
         var sentenceCount = sentences.Count;
         var readingTime = wordCount == 0 ? 0 : wordCount / 200d;
-        var syllables = tokens.Sum(token => EstimateSyllables(token.Normalized));
+        var syllables = 0;
+        for (var index = 0; index < tokens.Count; index++)
+        {
+            if ((index & 1023) == 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            syllables += EstimateSyllables(tokens[index].Normalized);
+        }
         var readability = CalculateFleschReadingEase(wordCount, sentenceCount, syllables);
 
         return new TextStatistics(

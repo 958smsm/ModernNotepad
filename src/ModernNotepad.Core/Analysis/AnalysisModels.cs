@@ -12,7 +12,9 @@ public enum GrammarCategory
     Preposition,
     Conjunction,
     Interrogative,
-    Quantifier
+    Quantifier,
+    Determiner,
+    Particle
 }
 
 public enum FindingKind

@@ -69,7 +69,7 @@ text
         (statistics, findings, color spans, duplicate spans)
 ```
 
-Cancellation checks are placed in token, character, sentence, and paragraph loops. A new keystroke cancels the previous pass. Visual spans and findings are capped in settings to prevent pathological UI work.
+Cancellation checks are placed in token, character, sentence, and paragraph loops. A new keystroke cancels the previous pass. Core analysis retains the complete span/finding result; `MaxVisualAnalysisSpans` is enforced only by the WPF overlay renderer so a large document is not silently truncated while UI adorners remain bounded. Sentence/paragraph-to-token alignment uses a shared forward index rather than rescanning the document for every span.
 
 #### Structured documents
 

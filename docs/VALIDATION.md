@@ -1,6 +1,6 @@
 # Validation report
 
-Validation date: 2026-08-08
+Validation date: 2026-08-09
 
 This report distinguishes checks that were completed in the artifact environment from checks that require a Windows machine with the .NET desktop toolchain.
 
@@ -36,7 +36,33 @@ The grammar-mode enhancement received an additional validation pass in this arti
 - No-network unit tests cover the restored OpenAI response helpers, Python worker response mapping, Google Cloud syntax-response mapping, API-key resolution, and mode/transport settings persistence.
 - The settings model normalizes invalid mode/provider/transport enum values, migrates the original saved `"AI"` value to `OpenAI`, and migrates the intermediate `"Provider"` + `GrammarProvider` format to the equivalent direct Python/Google mode.
 
+
+## Traditional grammar robustness upgrade — 2026-08-09
+
+The Traditional grammar upgrade received a focused validation pass in this artifact environment:
+
+- Added regression tests for the reported `Recall measures ... / High recall means ...` classification errors and for relative clauses, subject–auxiliary inversion, passive constructions, coordinated subjects, gerunds/participles, demonstratives/complementizers, and adjective/verb polysemy.
+- Added a 102,000-token stress test that asserts every token contributes to grammar-category counts and that category spans are not truncated.
+- Replaced per-sentence/per-paragraph full token rescans with `SpanTokenIndex` forward alignment and moved `MaxVisualAnalysisSpans` enforcement out of the core result into WPF overlay rendering.
+- `scripts/grammar_provider.py` passes `python -m py_compile`; its chunk iterator was exercised with 102,000 words and verified to reconstruct the input byte-for-character without dropping text. UTF-16 boundary mapping was also smoke-tested with a non-BMP character.
+- A delimiter/comment/string static scan completed successfully for every C# file changed by this upgrade.
+
+Because this environment still has no .NET SDK/MSBuild, the new C# regression/stress tests are included but could not be executed here. Run the Windows/.NET commands below before release.
+
 The environment still does not contain the .NET SDK/MSBuild, so the updated C# source and MSTest suite were **not compiled or executed here**. The Windows/.NET commands below remain the definitive build and test result.
+
+## Traditional grammar accuracy refinement — 2026-08-09
+
+A second focused pass addressed classification errors found after the initial robustness upgrade:
+
+- Added explicit `Determiner` and `Particle` categories across Traditional, OpenAI, spaCy, NLTK, Google Cloud, settings, colors, and provider-response parsing. This prevents articles from being reported as quantifiers and prevents infinitival `to` from disappearing as `Other`.
+- Added regressions for the reported `Recall measures ...` paragraph, `to` particle vs preposition, phrasal particles, content-vs-relative `that`, wh-subordinators, gerunds/progressives, passive-vs-stative participles, serial subjects, contractions, and numeric/date/percentage/ordinal tokens.
+- The tokenizer now retains numeric forms such as `3.14`, `50%`, `2026-08-09`, and case-insensitive ordinals such as `1ST` as analyzable tokens.
+- The expanded token regex keeps `RegexOptions.NonBacktracking` but avoids lookarounds, which .NET does not support in non-backtracking mode; boundary matching is expressed with `\b` instead.
+- Relative-clause subject inference now precomputes verb prefix/suffix and clause-start context once per sentence. The object-gap ambiguity search is bounded to local context, avoiding a new unbounded scan per complementizer.
+- `scripts/grammar_provider.py` and `scripts/generate_lexicon.py` pass `python -m py_compile`; all XAML/XML/JSON files parse successfully; a repository-wide C# lexical delimiter/literal/comment scan passed for 54 C# files.
+
+The artifact environment still has no .NET SDK/MSBuild, so these newly added C# tests are included but could not be compiled or executed here. The Windows/.NET commands below remain the definitive build/test validation.
 
 ## Checks that require Windows
 

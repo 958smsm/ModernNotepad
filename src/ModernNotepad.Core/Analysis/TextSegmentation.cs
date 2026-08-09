@@ -2,6 +2,24 @@ namespace ModernNotepad.Core.Analysis;
 
 public static class TextSegmentation
 {
+    private static readonly HashSet<string> NonTerminalAbbreviations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "mr", "mrs", "ms", "dr", "prof", "rev", "hon", "pres", "gov", "sen", "rep", "gen", "sgt", "lt", "col",
+        "capt", "cmdr", "sr", "jr", "st", "mt", "ft", "dept", "est", "fig", "eq", "ref", "refs", "vol", "pp",
+        "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec"
+    };
+
+    private static readonly HashSet<string> ContextualAbbreviations = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "etc", "vs", "approx", "misc", "incl", "inc", "ltd", "corp", "co", "no", "nos", "ed", "eds", "trans"
+    };
+
+    private static readonly HashSet<string> LikelySentenceStarters = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "i", "he", "she", "it", "we", "they", "you", "the", "this", "that", "these", "those", "there",
+        "however", "therefore", "meanwhile", "nevertheless", "nonetheless", "but", "then", "next", "finally"
+    };
+
     public static IReadOnlyList<TextSpan> GetSentences(
         string text,
         CancellationToken cancellationToken = default)
@@ -18,24 +36,13 @@ public static class TextSegmentation
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            var character = text[index];
-            var isBoundary = character is '.' or '!' or '?';
-            if (!isBoundary)
+            if (!IsSentenceBoundary(text, index))
             {
                 continue;
             }
 
-            var next = index + 1;
-            while (next < text.Length && text[next] is '"' or '\'' or '”' or '’' or ')' or ']')
-            {
-                next++;
-            }
-
-            if (next < text.Length && !char.IsWhiteSpace(text[next]))
-            {
-                continue;
-            }
-
+            var boundaryEnd = ConsumeTerminalRun(text, index);
+            var next = ConsumeClosingPunctuation(text, boundaryEnd);
             var span = Trim(text, start, next - start);
             if (!span.IsEmpty)
             {
@@ -43,6 +50,7 @@ public static class TextSegmentation
             }
 
             start = next;
+            index = Math.Max(index, next - 1);
         }
 
         var finalSpan = Trim(text, start, text.Length - start);
@@ -76,7 +84,7 @@ public static class TextSegmentation
 
             var firstBreakEnd = ConsumeLineBreak(text, index);
             var probe = firstBreakEnd;
-            while (probe < text.Length && (text[probe] == ' ' || text[probe] == '\t'))
+            while (probe < text.Length && text[probe] is ' ' or '\t')
             {
                 probe++;
             }
@@ -109,6 +117,184 @@ public static class TextSegmentation
         }
 
         return paragraphs;
+    }
+
+    private static bool IsSentenceBoundary(string text, int index)
+    {
+        var character = text[index];
+        if (character is '!' or '?')
+        {
+            // Treat a run such as "?!" or "!!!" as one boundary at its final mark.
+            return index + 1 >= text.Length || text[index + 1] is not ('!' or '?');
+        }
+
+        if (character != '.')
+        {
+            return false;
+        }
+
+        if (index > 0 && index + 1 < text.Length
+            && char.IsDigit(text[index - 1]) && char.IsDigit(text[index + 1]))
+        {
+            return false; // decimal/version number: 3.14, 1.2
+        }
+
+        if (index + 1 < text.Length && text[index + 1] == '.')
+        {
+            return false; // wait for the end of an ellipsis
+        }
+
+        if (index > 0 && text[index - 1] == '.')
+        {
+            // Final dot of an ellipsis is a sentence boundary only when the following
+            // non-space token looks like a new sentence or the document ends.
+            var ellipsisNext = FindNextNonWhitespace(text, index + 1);
+            return ellipsisNext < 0 || char.IsUpper(text[ellipsisNext]) || IsOpeningQuote(text[ellipsisNext]);
+        }
+
+        var next = ConsumeClosingPunctuation(text, index + 1);
+        if (next < text.Length && !char.IsWhiteSpace(text[next]))
+        {
+            return false; // domain names, filenames, abbreviations such as e.g., etc.
+        }
+
+        var wordStart = index;
+        while (wordStart > 0 && char.IsLetter(text[wordStart - 1]))
+        {
+            wordStart--;
+        }
+
+        var precedingWord = text.AsSpan(wordStart, index - wordStart);
+        if (!precedingWord.IsEmpty)
+        {
+            var abbreviation = precedingWord.ToString();
+            if (NonTerminalAbbreviations.Contains(abbreviation))
+            {
+                return false;
+            }
+
+            var nextNonWhitespace = FindNextNonWhitespace(text, next);
+            if (ContextualAbbreviations.Contains(abbreviation)
+                && nextNonWhitespace >= 0
+                && char.IsLower(text[nextNonWhitespace]))
+            {
+                return false;
+            }
+
+            // A single capital followed by a surname is normally an initial, not an
+            // end of sentence: "A. Smith". The same rule also handles acronym pieces.
+            var isInitialismPiece = wordStart > 0 && text[wordStart - 1] == '.';
+            if (!isInitialismPiece
+                && precedingWord.Length == 1
+                && char.IsUpper(precedingWord[0])
+                && nextNonWhitespace >= 0
+                && char.IsUpper(text[nextNonWhitespace]))
+            {
+                return false;
+            }
+        }
+
+        // Handle multi-period initialisms such as U.S. or Ph.D. when followed by a
+        // continuation token. This deliberately stays conservative at paragraph/end.
+        if (LooksLikeInitialismEndingAt(text, index))
+        {
+            var nextNonWhitespace = FindNextNonWhitespace(text, next);
+            if (nextNonWhitespace >= 0 && !StartsLikelyNewSentenceAfterInitialism(text, nextNonWhitespace))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static int ConsumeTerminalRun(string text, int index)
+    {
+        var end = index + 1;
+        while (end < text.Length && text[end] is '!' or '?')
+        {
+            end++;
+        }
+
+        return end;
+    }
+
+    private static int ConsumeClosingPunctuation(string text, int index)
+    {
+        while (index < text.Length && text[index] is '"' or '\'' or '”' or '’' or ')' or ']' or '}')
+        {
+            index++;
+        }
+
+        return index;
+    }
+
+    private static int FindNextNonWhitespace(string text, int start)
+    {
+        for (var index = start; index < text.Length; index++)
+        {
+            if (!char.IsWhiteSpace(text[index]))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    private static bool IsOpeningQuote(char character) => character is '"' or '\'' or '“' or '‘';
+
+    private static bool LooksLikeInitialismEndingAt(string text, int periodIndex)
+    {
+        var dots = 0;
+        var letters = 0;
+        var cursor = periodIndex;
+        while (cursor >= 1)
+        {
+            if (text[cursor] != '.' || !char.IsLetter(text[cursor - 1]))
+            {
+                break;
+            }
+
+            dots++;
+            letters++;
+            cursor -= 2;
+            if (cursor < 0 || text[cursor] != '.')
+            {
+                break;
+            }
+        }
+
+        return dots >= 2 && letters >= 2;
+    }
+
+    private static bool StartsLikelyNewSentenceAfterInitialism(string text, int index)
+    {
+        for (var cursor = index - 1; cursor >= 0 && char.IsWhiteSpace(text[cursor]); cursor--)
+        {
+            if (text[cursor] is '\r' or '\n')
+            {
+                return true;
+            }
+        }
+
+        while (index < text.Length && IsOpeningQuote(text[index]))
+        {
+            index++;
+        }
+
+        if (index >= text.Length || !char.IsUpper(text[index]))
+        {
+            return false;
+        }
+
+        var end = index + 1;
+        while (end < text.Length && char.IsLetter(text[end]))
+        {
+            end++;
+        }
+
+        return LikelySentenceStarters.Contains(text.Substring(index, end - index));
     }
 
     private static int ConsumeLineBreak(string text, int index)

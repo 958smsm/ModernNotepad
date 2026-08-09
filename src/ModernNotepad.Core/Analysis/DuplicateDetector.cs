@@ -14,7 +14,7 @@ public sealed class DuplicateDetector
 
     private static readonly Regex NormalizeSentenceRegex = new(
         @"[^\p{L}\p{M}\p{N}]+",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
 
     public DuplicateAnalysis Analyze(
         string text,
@@ -37,10 +37,7 @@ public sealed class DuplicateDetector
         AnalyzeDuplicateSentences(text, sentences, findings, highlights, cancellationToken);
 
         return new DuplicateAnalysis(
-            findings
-                .OrderBy(finding => finding.Span?.Start ?? int.MaxValue)
-                .Take(500)
-                .ToArray(),
+            findings.OrderBy(finding => finding.Span?.Start ?? int.MaxValue).ToArray(),
             highlights.Values.OrderBy(span => span.Start).ToArray());
     }
 
@@ -53,29 +50,38 @@ public sealed class DuplicateDetector
         IDictionary<(int Start, int Length), TextSpan> highlights,
         CancellationToken cancellationToken)
     {
-        foreach (var sentence in sentences)
+        var ranges = SpanTokenIndex.Align(tokens, sentences, cancellationToken);
+        foreach (var range in ranges)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var sentenceTokens = tokens
-                .Where(token => token.Span.Start >= sentence.Start && token.Span.End <= sentence.End)
-                .Where(token => strict || !CommonWords.Contains(token.Normalized))
-                .GroupBy(token => token.Normalized)
-                .Where(group => group.Count() > 1);
-
-            foreach (var group in sentenceTokens)
+            if (range.Count < 2)
             {
-                var occurrences = group.ToArray();
-                foreach (var occurrence in occurrences)
+                continue;
+            }
+
+            var occurrences = BuildOccurrenceIndex(tokens, range.Start, range.End, strict, cancellationToken);
+            string? normalizedSentence = null;
+            foreach (var pair in occurrences)
+            {
+                if (pair.Value.Count <= 1)
                 {
-                    highlights[(occurrence.Span.Start, occurrence.Span.Length)] = occurrence.Span;
+                    continue;
                 }
 
-                var sentenceText = text.Substring(sentence.Start, sentence.Length);
+                foreach (var tokenIndex in pair.Value)
+                {
+                    var token = tokens[tokenIndex];
+                    highlights[(token.Span.Start, token.Span.Length)] = token.Span;
+                }
+
+                normalizedSentence ??= Normalize(text.Substring(range.Span.Start, range.Span.Length));
+                var first = tokens[pair.Value[0]];
+                var second = tokens[pair.Value[1]];
                 findings.Add(new TextFinding(
-                    StableFindingId.Create("repeat-word", $"{group.Key}|{Normalize(sentenceText)}"),
+                    StableFindingId.Create("repeat-word", $"{pair.Key}|{range.Span.Start}|{normalizedSentence}"),
                     FindingKind.RepeatedWord,
-                    $"“{occurrences[0].Text}” is repeated {occurrences.Length} times in the same sentence.",
-                    occurrences[1].Span,
+                    $"“{first.Text}” is repeated {pair.Value.Count} times in the same sentence.",
+                    second.Span,
                     "Consider removing or replacing one occurrence."));
             }
         }
@@ -90,30 +96,30 @@ public sealed class DuplicateDetector
         IDictionary<(int Start, int Length), TextSpan> highlights,
         CancellationToken cancellationToken)
     {
-        foreach (var paragraph in paragraphs)
+        var ranges = SpanTokenIndex.Align(tokens, paragraphs, cancellationToken);
+        foreach (var range in ranges)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var frequent = tokens
-                .Where(token => token.Span.Start >= paragraph.Start && token.Span.End <= paragraph.End)
-                .Where(token => strict || !CommonWords.Contains(token.Normalized))
-                .GroupBy(token => token.Normalized)
-                .Where(group => group.Count() >= threshold)
-                .OrderByDescending(group => group.Count())
-                .Take(12);
-
-            foreach (var group in frequent)
+            var occurrences = BuildOccurrenceIndex(tokens, range.Start, range.End, strict, cancellationToken);
+            foreach (var pair in occurrences.OrderByDescending(pair => pair.Value.Count))
             {
-                var occurrences = group.ToArray();
-                foreach (var occurrence in occurrences)
+                if (pair.Value.Count < threshold)
                 {
-                    highlights[(occurrence.Span.Start, occurrence.Span.Length)] = occurrence.Span;
+                    continue;
                 }
 
+                foreach (var tokenIndex in pair.Value)
+                {
+                    var token = tokens[tokenIndex];
+                    highlights[(token.Span.Start, token.Span.Length)] = token.Span;
+                }
+
+                var first = tokens[pair.Value[0]];
                 findings.Add(new TextFinding(
-                    StableFindingId.Create("paragraph-frequency", $"{paragraph.Start}|{group.Key}"),
+                    StableFindingId.Create("paragraph-frequency", $"{range.Span.Start}|{pair.Key}"),
                     FindingKind.FrequentWord,
-                    $"“{occurrences[0].Text}” appears {occurrences.Length} times in this paragraph.",
-                    occurrences[0].Span,
+                    $"“{first.Text}” appears {pair.Value.Count} times in this paragraph.",
+                    first.Span,
                     "Consider varying the wording."));
             }
         }
@@ -128,27 +134,27 @@ public sealed class DuplicateDetector
         CancellationToken cancellationToken)
     {
         var documentThreshold = Math.Max(threshold * 2, 5);
-        var frequent = tokens
-            .Where(token => strict || !CommonWords.Contains(token.Normalized))
-            .GroupBy(token => token.Normalized)
-            .Where(group => group.Count() >= documentThreshold)
-            .OrderByDescending(group => group.Count())
-            .Take(15);
-
-        foreach (var group in frequent)
+        var occurrences = BuildOccurrenceIndex(tokens, 0, tokens.Count, strict, cancellationToken);
+        foreach (var pair in occurrences.OrderByDescending(pair => pair.Value.Count))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var occurrences = group.ToArray();
-            foreach (var occurrence in occurrences)
+            if (pair.Value.Count < documentThreshold)
             {
-                highlights[(occurrence.Span.Start, occurrence.Span.Length)] = occurrence.Span;
+                continue;
             }
 
+            foreach (var tokenIndex in pair.Value)
+            {
+                var token = tokens[tokenIndex];
+                highlights[(token.Span.Start, token.Span.Length)] = token.Span;
+            }
+
+            var first = tokens[pair.Value[0]];
             findings.Add(new TextFinding(
-                StableFindingId.Create("document-frequency", group.Key),
+                StableFindingId.Create("document-frequency", pair.Key),
                 FindingKind.FrequentWord,
-                $"“{occurrences[0].Text}” appears {occurrences.Length} times in the document.",
-                occurrences[0].Span,
+                $"“{first.Text}” appears {pair.Value.Count} times in the document.",
+                first.Span,
                 "Review whether a synonym would improve variety.",
                 FindingSeverity.Information));
         }
@@ -161,27 +167,66 @@ public sealed class DuplicateDetector
         IDictionary<(int Start, int Length), TextSpan> highlights,
         CancellationToken cancellationToken)
     {
-        var groups = sentences
-            .Select(span => new { Span = span, Normalized = Normalize(text.Substring(span.Start, span.Length)) })
-            .Where(item => item.Normalized.Length >= 10)
-            .GroupBy(item => item.Normalized)
-            .Where(group => group.Count() > 1);
-
-        foreach (var group in groups)
+        var firstByNormalized = new Dictionary<string, TextSpan>(StringComparer.Ordinal);
+        for (var index = 0; index < sentences.Count; index++)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            var duplicates = group.ToArray();
-            foreach (var duplicate in duplicates.Skip(1))
+            if ((index & 127) == 0)
             {
-                highlights[(duplicate.Span.Start, duplicate.Span.Length)] = duplicate.Span;
-                findings.Add(new TextFinding(
-                    StableFindingId.Create("duplicate-sentence", group.Key),
-                    FindingKind.DuplicateSentence,
-                    "This sentence duplicates an earlier sentence.",
-                    duplicate.Span,
-                    "Remove it or combine the two passages."));
+                cancellationToken.ThrowIfCancellationRequested();
             }
+
+            var span = sentences[index];
+            var normalized = Normalize(text.Substring(span.Start, span.Length));
+            if (normalized.Length < 10)
+            {
+                continue;
+            }
+
+            if (firstByNormalized.TryAdd(normalized, span))
+            {
+                continue;
+            }
+
+            highlights[(span.Start, span.Length)] = span;
+            findings.Add(new TextFinding(
+                StableFindingId.Create("duplicate-sentence", $"{normalized}|{span.Start}"),
+                FindingKind.DuplicateSentence,
+                "This sentence duplicates an earlier sentence.",
+                span,
+                "Remove it or combine the two passages."));
         }
+    }
+
+    private static Dictionary<string, List<int>> BuildOccurrenceIndex(
+        IReadOnlyList<TextToken> tokens,
+        int start,
+        int end,
+        bool strict,
+        CancellationToken cancellationToken)
+    {
+        var occurrences = new Dictionary<string, List<int>>(StringComparer.OrdinalIgnoreCase);
+        for (var index = start; index < end; index++)
+        {
+            if ((index & 511) == 0)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            var token = tokens[index];
+            if (!strict && CommonWords.Contains(token.Normalized))
+            {
+                continue;
+            }
+
+            if (!occurrences.TryGetValue(token.Normalized, out var list))
+            {
+                list = new List<int>(2);
+                occurrences.Add(token.Normalized, list);
+            }
+            list.Add(index);
+        }
+
+        return occurrences;
     }
 
     private static string Normalize(string text)

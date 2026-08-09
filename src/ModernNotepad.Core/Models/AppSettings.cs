@@ -72,7 +72,9 @@ public sealed class AppSettings
         [GrammarCategory.Preposition] = "#0891B2",
         [GrammarCategory.Conjunction] = "#6B7280",
         [GrammarCategory.Interrogative] = "#F97316",
-        [GrammarCategory.Quantifier] = "#8B5CF6"
+        [GrammarCategory.Quantifier] = "#8B5CF6",
+        [GrammarCategory.Determiner] = "#6366F1",
+        [GrammarCategory.Particle] = "#0F766E"
     };
 
     public void Normalize()

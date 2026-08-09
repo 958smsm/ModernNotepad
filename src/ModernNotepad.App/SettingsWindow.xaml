@@ -102,6 +102,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Style="{StaticResource SettingsLabelStyle}" Text="Default font" />
@@ -363,6 +364,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
@@ -401,9 +403,17 @@
                                 <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Interrogatives" />
                                 <TextBox x:Name="InterrogativeColorTextBox" AutomationProperties.Name="Interrogative color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
-                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="8,0,0,4">
-                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Quantifiers / determiners" />
+                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="8,0,0,8">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Quantifiers" />
                                 <TextBox x:Name="QuantifierColorTextBox" AutomationProperties.Name="Quantifier color" TextChanged="ColorTextBox_TextChanged" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="5" Grid.Column="0" Margin="0,0,8,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Determiners / articles" />
+                                <TextBox x:Name="DeterminerColorTextBox" AutomationProperties.Name="Determiner color" TextChanged="ColorTextBox_TextChanged" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="5" Grid.Column="1" Margin="8,0,0,4">
+                                <TextBlock Foreground="{DynamicResource MutedTextBrush}" FontSize="12" Text="Particles" />
+                                <TextBox x:Name="ParticleColorTextBox" AutomationProperties.Name="Particle color" TextChanged="ColorTextBox_TextChanged" />
                             </StackPanel>
                         </Grid>
                     </Border>

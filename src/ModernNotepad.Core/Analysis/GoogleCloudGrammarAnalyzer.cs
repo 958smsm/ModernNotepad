@@ -196,7 +196,9 @@ public sealed class GoogleCloudGrammarAnalyzer
             "PRON" => GrammarCategory.Pronoun,
             "ADP" => GrammarCategory.Preposition,
             "CONJ" => GrammarCategory.Conjunction,
-            "DET" or "NUM" => GrammarCategory.Quantifier,
+            "DET" => GrammarCategory.Determiner,
+            "NUM" => GrammarCategory.Quantifier,
+            "PRT" => GrammarCategory.Particle,
             "NOUN" => IsSubjectDependency(token.Dependency)
                 ? GrammarCategory.SubjectNoun
                 : GrammarCategory.ObjectNoun,
@@ -234,6 +236,8 @@ public sealed class GoogleCloudGrammarAnalyzer
         GrammarCategory.Adverb => 50,
         GrammarCategory.Conjunction => 45,
         GrammarCategory.Preposition => 40,
+        GrammarCategory.Particle => 38,
+        GrammarCategory.Determiner => 36,
         GrammarCategory.Quantifier => 35,
         _ => 0
     };

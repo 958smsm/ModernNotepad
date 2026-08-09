@@ -899,7 +899,9 @@ public partial class MainWindow : Window
         GrammarCategory.Preposition => "Prepositions",
         GrammarCategory.Conjunction => "Conjunctions",
         GrammarCategory.Interrogative => "Interrogatives",
-        GrammarCategory.Quantifier => "Quantifiers / determiners",
+        GrammarCategory.Quantifier => "Quantifiers",
+        GrammarCategory.Determiner => "Determiners / articles",
+        GrammarCategory.Particle => "Particles",
         _ => "Other"
     };
 

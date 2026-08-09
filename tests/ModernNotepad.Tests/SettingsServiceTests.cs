@@ -98,6 +98,8 @@ public sealed class SettingsServiceTests
         Assert.AreEqual(GrammarAnalysisProvider.PythonSpacy, settings.GrammarProvider);
         Assert.AreEqual(PythonGrammarTransport.NamedPipes, settings.PythonTransport);
         Assert.IsTrue(settings.GrammarColors.ContainsKey(GrammarCategory.Verb));
+        Assert.IsTrue(settings.GrammarColors.ContainsKey(GrammarCategory.Determiner));
+        Assert.IsTrue(settings.GrammarColors.ContainsKey(GrammarCategory.Particle));
     }
 
     [TestMethod]

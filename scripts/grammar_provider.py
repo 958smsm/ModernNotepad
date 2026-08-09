@@ -28,8 +28,10 @@ BE_FORMS = {"am", "is", "are", "was", "were", "be", "being", "been"}
 
 CATEGORY_PRIORITY = {
     "Other": 0,
-    "Quantifier": 20,
+    "Determiner": 20,
+    "Quantifier": 22,
     "Preposition": 30,
+    "Particle": 32,
     "Conjunction": 35,
     "Adverb": 40,
     "Adjective": 45,
@@ -96,6 +98,28 @@ def _load_spacy():
     return _spacy_nlp
 
 
+def _spacy_noun_is_subject(token) -> bool:
+    subject_deps = {"nsubj", "nsubjpass", "csubj", "csubjpass", "attr"}
+    dep = token.dep_.lower()
+    if dep in subject_deps:
+        return True
+    if dep != "conj":
+        return False
+
+    # Coordinated subjects usually attach with dep=conj to the first subject.
+    head = token.head
+    for _ in range(4):
+        if head is token:
+            break
+        head_dep = head.dep_.lower()
+        if head_dep in subject_deps:
+            return True
+        if head_dep != "conj" or head.head is head:
+            break
+        head = head.head
+    return False
+
+
 def _spacy_category(token, is_question: bool) -> str:
     word = token.text.casefold()
     if is_question and word in INTERROGATIVES:
@@ -115,46 +139,155 @@ def _spacy_category(token, is_question: bool) -> str:
         return "Preposition"
     if pos in {"CCONJ", "SCONJ"}:
         return "Conjunction"
-    if pos in {"DET", "NUM"}:
+    if pos == "DET":
+        return "Determiner"
+    if pos == "NUM":
         return "Quantifier"
+    if pos == "PART":
+        return "Particle"
     if pos in {"NOUN", "PROPN"}:
-        if dep in {"nsubj", "nsubjpass", "csubj", "csubjpass", "attr"}:
+        if _spacy_noun_is_subject(token):
             return "SubjectNoun"
         return "ObjectNoun"
     return "Other"
 
 
+def _looks_like_sentence_boundary(text: str, index: int) -> bool:
+    if index < 0 or index >= len(text) or text[index] not in ".!?":
+        return False
+    if index + 1 < len(text) and not text[index + 1].isspace():
+        return False
+    if text[index] == ".":
+        if index > 0 and index + 1 < len(text) and text[index - 1].isdigit() and text[index + 1].isdigit():
+            return False
+        word_start = index
+        while word_start > 0 and text[word_start - 1].isalpha():
+            word_start -= 1
+        abbreviation = text[word_start:index].casefold()
+        if abbreviation in {
+            "mr", "mrs", "ms", "dr", "prof", "rev", "gov", "sen", "rep", "gen", "sgt", "lt", "col",
+            "capt", "sr", "jr", "st", "mt", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep",
+            "sept", "oct", "nov", "dec",
+        }:
+            return False
+    return True
+
+
+def _iter_safe_text_chunks(text: str, max_chars: int):
+    """Yield (global_start, text_chunk), preferring paragraph/sentence boundaries."""
+    if not text:
+        return
+
+    max_chars = max(1_000, max_chars)
+    start = 0
+    length = len(text)
+    while start < length:
+        target = min(length, start + max_chars)
+        if target >= length:
+            yield start, text[start:]
+            return
+
+        floor = start + max_chars // 2
+        cut = -1
+
+        # Paragraph boundaries are safest and cheapest to identify.
+        paragraph = text.rfind("\n\n", floor, target)
+        if paragraph >= floor:
+            cut = paragraph + 2
+
+        if cut < 0:
+            cursor = target - 1
+            while cursor >= floor:
+                if _looks_like_sentence_boundary(text, cursor):
+                    cut = cursor + 1
+                    while cut < length and text[cut].isspace():
+                        cut += 1
+                    break
+                cursor -= 1
+
+        # A single pathological sentence can exceed the chunk target. Split only
+        # as a last resort, and only at whitespace so no lexical token is bisected.
+        if cut <= start:
+            cut = target
+            while cut > floor and not text[cut - 1].isspace():
+                cut -= 1
+            if cut <= floor:
+                cut = target
+                while cut < length and not text[cut].isspace():
+                    cut += 1
+
+        yield start, text[start:cut]
+        start = cut
+
+
 def analyze_spacy(text: str, input_tokens: list[dict[str, Any]]) -> list[str]:
     nlp = _load_spacy()
-    doc = nlp(text)
     boundary_map = _utf16_boundary_map(text)
+    input_spans = [_py_span(token, boundary_map) for token in input_tokens]
+    assignments = ["Other"] * len(input_tokens)
 
-    question_spans: list[tuple[int, int]] = []
+    configured_chunk = os.environ.get("MODERNNOTEPAD_SPACY_CHUNK_CHARS", "200000").strip()
     try:
-        for sentence in doc.sents:
-            if sentence.text.rstrip().endswith("?"):
-                question_spans.append((sentence.start_char, sentence.end_char))
-    except ValueError:
-        pass
+        chunk_chars = int(configured_chunk)
+    except ValueError as exc:
+        raise RuntimeError("MODERNNOTEPAD_SPACY_CHUNK_CHARS must be an integer.") from exc
 
-    assignments: list[str] = []
-    doc_tokens = list(doc)
-    cursor = 0
-    for input_token in input_tokens:
-        start, end = _py_span(input_token, boundary_map)
-        while cursor < len(doc_tokens) and doc_tokens[cursor].idx + len(doc_tokens[cursor].text) <= start:
-            cursor += 1
+    # Stay below Language.max_length. The default is 1,000,000 characters, but
+    # custom pipelines can set a lower value.
+    max_length = max(1_001, int(getattr(nlp, "max_length", 1_000_000)))
+    chunk_chars = min(max(1_000, chunk_chars), max_length - 1)
+    chunks = list(_iter_safe_text_chunks(text, chunk_chars))
+    if not chunks:
+        return assignments
 
-        categories: list[str] = []
-        index = cursor
-        while index < len(doc_tokens) and doc_tokens[index].idx < end:
-            candidate = doc_tokens[index]
-            candidate_end = candidate.idx + len(candidate.text)
-            if candidate_end > start:
-                is_question = any(q_start <= candidate.idx < q_end for q_start, q_end in question_spans)
-                categories.append(_spacy_category(candidate, is_question))
-            index += 1
-        assignments.append(_choose(categories))
+    batch_size_text = os.environ.get("MODERNNOTEPAD_SPACY_PIPE_BATCH", "4").strip()
+    try:
+        batch_size = max(1, int(batch_size_text))
+    except ValueError as exc:
+        raise RuntimeError("MODERNNOTEPAD_SPACY_PIPE_BATCH must be an integer.") from exc
+
+    input_cursor = 0
+    docs = nlp.pipe((chunk_text for _, chunk_text in chunks), batch_size=batch_size)
+    for (chunk_start, chunk_text), doc in zip(chunks, docs):
+        chunk_end = chunk_start + len(chunk_text)
+        doc_tokens = list(doc)
+        question_flags = [False] * len(doc_tokens)
+        try:
+            for sentence in doc.sents:
+                if not sentence.text.rstrip().endswith("?"):
+                    continue
+                for sentence_token in sentence:
+                    if 0 <= sentence_token.i < len(question_flags):
+                        question_flags[sentence_token.i] = True
+        except ValueError:
+            pass
+
+        doc_cursor = 0
+        while input_cursor < len(input_tokens) and input_spans[input_cursor][1] <= chunk_start:
+            input_cursor += 1
+
+        while input_cursor < len(input_tokens):
+            global_start, global_end = input_spans[input_cursor]
+            if global_start >= chunk_end:
+                break
+
+            local_start = max(0, global_start - chunk_start)
+            local_end = min(len(chunk_text), global_end - chunk_start)
+            while doc_cursor < len(doc_tokens) and doc_tokens[doc_cursor].idx + len(doc_tokens[doc_cursor].text) <= local_start:
+                doc_cursor += 1
+
+            categories: list[str] = []
+            candidate_index = doc_cursor
+            while candidate_index < len(doc_tokens) and doc_tokens[candidate_index].idx < local_end:
+                candidate = doc_tokens[candidate_index]
+                candidate_end = candidate.idx + len(candidate.text)
+                if candidate_end > local_start:
+                    is_question = question_flags[candidate.i] if candidate.i < len(question_flags) else False
+                    categories.append(_spacy_category(candidate, is_question))
+                candidate_index += 1
+
+            assignments[input_cursor] = _choose(categories)
+            input_cursor += 1
 
     return assignments
 
@@ -173,6 +306,18 @@ def _load_nltk():
     return nltk
 
 
+def _boundary_marks_in_range(text: str, start: int, end: int) -> tuple[bool, bool]:
+    has_boundary = False
+    has_question = False
+    for index in range(max(0, start), min(len(text), end)):
+        if text[index] == "?" and _looks_like_sentence_boundary(text, index):
+            has_question = True
+            has_boundary = True
+        elif text[index] in ".!" and _looks_like_sentence_boundary(text, index):
+            has_boundary = True
+    return has_boundary, has_question
+
+
 def _split_input_sentences(text: str, tokens: list[dict[str, Any]]) -> list[tuple[list[int], bool]]:
     if not tokens:
         return []
@@ -184,9 +329,10 @@ def _split_input_sentences(text: str, tokens: list[dict[str, Any]]) -> list[tupl
 
     for index, token in enumerate(tokens):
         start, end = _py_span(token, boundary_map)
-        gap = text[previous_end:start] if current else text[:start]
-        if current and any(mark in gap for mark in ".?!"):
-            groups.append((current, sentence_question or "?" in gap))
+        gap_start = previous_end if current else 0
+        gap_has_boundary, gap_has_question = _boundary_marks_in_range(text, gap_start, start)
+        if current and gap_has_boundary:
+            groups.append((current, sentence_question or gap_has_question))
             current = []
             sentence_question = False
         current.append(index)
@@ -195,15 +341,16 @@ def _split_input_sentences(text: str, tokens: list[dict[str, Any]]) -> list[tupl
         next_start = len(text)
         if index + 1 < len(tokens):
             next_start, _ = _py_span(tokens[index + 1], boundary_map)
-        trailing = text[end:next_start]
-        sentence_question = sentence_question or "?" in trailing
-        if any(mark in trailing for mark in ".?!"):
+        trailing_has_boundary, trailing_has_question = _boundary_marks_in_range(text, end, next_start)
+        sentence_question = sentence_question or trailing_has_question
+        if trailing_has_boundary:
             groups.append((current, sentence_question))
             current = []
             sentence_question = False
 
     if current:
-        groups.append((current, sentence_question or "?" in text[previous_end:]))
+        _, final_question = _boundary_marks_in_range(text, previous_end, len(text))
+        groups.append((current, sentence_question or final_question))
     return groups
 
 
@@ -230,9 +377,11 @@ def _nltk_category(
         return "Conjunction"
     if tag == "IN":
         return "Conjunction" if lower in CONJUNCTIONS else "Preposition"
-    if tag == "TO":
-        return "Preposition"
-    if tag in {"DT", "PDT", "WDT", "CD"}:
+    if tag in {"TO", "RP"}:
+        return "Particle"
+    if tag in {"DT", "PDT", "WDT"}:
+        return "Determiner"
+    if tag == "CD":
         return "Quantifier"
     if tag.startswith("NN"):
         if first_verb_position is None or position < first_verb_position:
@@ -249,25 +398,36 @@ def analyze_nltk(text: str, input_tokens: list[dict[str, Any]]) -> list[str]:
     assignments = ["Other"] * len(input_tokens)
     groups = _split_input_sentences(text, input_tokens)
 
-    for indexes, is_question in groups:
-        words = [str(input_tokens[index]["text"]) for index in indexes]
+    configured_batch = os.environ.get("MODERNNOTEPAD_NLTK_SENTENCE_BATCH", "256").strip()
+    try:
+        sentence_batch = max(1, int(configured_batch))
+    except ValueError as exc:
+        raise RuntimeError("MODERNNOTEPAD_NLTK_SENTENCE_BATCH must be an integer.") from exc
+
+    for batch_start in range(0, len(groups), sentence_batch):
+        batch = groups[batch_start:batch_start + sentence_batch]
+        sentence_words = [
+            [str(input_tokens[index]["text"]) for index in indexes]
+            for indexes, _ in batch
+        ]
         try:
-            tagged = nltk.pos_tag(words, lang="eng")
+            tagged_batch = nltk.pos_tag_sents(sentence_words, lang="eng")
         except LookupError as exc:
             raise RuntimeError(
                 "NLTK's English POS tagger data is missing. Run scripts/setup-grammar-providers.ps1 or "
                 "python -m nltk.downloader averaged_perceptron_tagger_eng."
             ) from exc
 
-        first_verb = next(
-            (position for position, (_, tag) in enumerate(tagged) if tag.startswith("VB") or tag == "MD"),
-            None,
-        )
-        for position, token_index in enumerate(indexes):
-            word, tag = tagged[position]
-            assignments[token_index] = _nltk_category(
-                word, tag, position, first_verb, tagged, is_question
+        for (indexes, is_question), tagged in zip(batch, tagged_batch):
+            first_verb = next(
+                (position for position, (_, tag) in enumerate(tagged) if tag.startswith("VB") or tag == "MD"),
+                None,
             )
+            for position, token_index in enumerate(indexes):
+                word, tag = tagged[position]
+                assignments[token_index] = _nltk_category(
+                    word, tag, position, first_verb, tagged, is_question
+                )
 
     return assignments
 
