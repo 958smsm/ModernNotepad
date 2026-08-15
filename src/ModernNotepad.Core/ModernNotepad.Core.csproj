@@ -8,4 +8,8 @@
   <ItemGroup>
     <PackageReference Include="OpenAI" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Analysis\Data\GrammarLexicon.tsv.gz"
+                      LogicalName="ModernNotepad.Core.Analysis.Data.GrammarLexicon.tsv.gz" />
+  </ItemGroup>
 </Project>

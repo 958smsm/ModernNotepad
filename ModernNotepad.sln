@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.App", "src\Mo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.Tests", "tests\ModernNotepad.Tests\ModernNotepad.Tests.csproj", "{630D6058-94BE-4E69-BC1E-1588327F2C01}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{66320409-64EC-F7C5-3DEF-65E7510DAAD1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ModernNotepad.GrammarBenchmark", "benchmarks\ModernNotepad.GrammarBenchmark\ModernNotepad.GrammarBenchmark.csproj", "{E8B354CE-4C78-4869-BAB1-BBF2EE781166}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,8 +44,19 @@ Global
 		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|x64.Build.0 = Release|Any CPU
 		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{630D6058-94BE-4E69-BC1E-1588327F2C01}.Release|ARM64.Build.0 = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|x64.ActiveCfg = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|x64.Build.0 = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|ARM64.ActiveCfg = Release|Any CPU
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166}.Release|ARM64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{E8B354CE-4C78-4869-BAB1-BBF2EE781166} = {66320409-64EC-F7C5-3DEF-65E7510DAAD1}
 	EndGlobalSection
 EndGlobal

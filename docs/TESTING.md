@@ -13,9 +13,54 @@ Current test groups:
 - **File operations**: UTF-8 BOM, Windows-1252, mixed CRLF/LF/CR preservation, special characters, and atomic replacement cleanup.
 - **Duplicate detection**: repeated words, stop-word behavior, strict mode, duplicate sentences, and configured thresholds.
 - **Text statistics**: word/character/sentence/paragraph counts, reading time, readability range, and grammar-category counts.
-- **Grammar / providers**: Traditional-context regressions (relative/content clauses, inversion, passive-vs-stative participles, coordination, gerunds/progressives, demonstratives/complementizers, wh-subordinators, contractions, determiner/quantifier/particle distinctions, numeric forms, lexical ambiguity), 102,000-word no-drop stress coverage, Python worker response mapping, Google Cloud UTF-16 syntax-token mapping, provider-setting round trips, and the shared `GrammarAnalysis` category-count/span contract without making a network request.
+- **Grammar / providers**: Traditional-context regressions (relative/content clauses, inversion, passive-vs-stative participles, coordination, gerunds/progressives, demonstratives/complementizers, wh-subordinators, ASCII/Unicode/stacked contractions, determiner/quantifier/particle distinctions, numeric forms, weighted lexical ambiguity, regular/irregular inflections, proper names/acronyms, phrasal verbs, and unknown-word morphology), embedded 100,000+ lexicon compatibility, 102,000-word no-drop stress coverage, Python worker response mapping, Google Cloud UTF-16 syntax-token mapping, provider-setting round trips, and the shared `GrammarAnalysis` category-count/span contract without making a network request.
 - **Settings**: serialization round trip, corruption fallback/preservation, bounds normalization, and default color repair.
 - **Structured text**: strict JSON parsing (including comment rejection), JSON error positions/formatting, XML declaration-preserving formatting, and YAML tab-indentation warnings.
+
+## Traditional grammar accuracy benchmark
+
+Run the release gate:
+
+```powershell
+./scripts/benchmark-grammar.ps1
+```
+
+The checked-in benchmark evaluates the analyzer against the official Universal
+Dependencies English Web Treebank 2.18 test split. It aligns the analyzer's
+tokens with 21,133 eligible lexical gold tokens, maps UD universal POS tags to the
+existing `GrammarCategory` compatibility taxonomy, reports per-category
+accuracy and confusions, and separately scores `SubjectNoun`/`ObjectNoun`
+role assignment. The default gate requires 90% coarse-category accuracy, 98%
+alignment coverage, and 25,000 sustained tokens/second.
+
+The 2026-08-09 reference run produced **91.44%** coarse-category accuracy
+(19,061/20,846 aligned/evaluable tokens), **98.64%** alignment coverage, and
+**88.86%** noun-role accuracy. Throughput depends on build configuration and
+hardware and is printed on every run. Use `-ShowErrors` to include sample
+misclassifications, or invoke the project directly to set different gates:
+
+```powershell
+dotnet run --project benchmarks/ModernNotepad.GrammarBenchmark -c Release -- `
+  --minimum-accuracy 0.90 --minimum-coverage 0.98 --minimum-throughput 25000
+```
+
+The UD corpus and its CC BY-SA 4.0 license are stored under the benchmark's
+`Data` directory. They are test inputs and are not embedded in the application.
+
+## Lexicon reproducibility
+
+`GrammarLexicon.tsv.gz` is a deterministic generated asset. With NLTK and its
+WordNet/Brown resources installed, verify that both the asset and C# loader
+match the generator without rewriting them:
+
+```powershell
+python scripts/generate_lexicon.py --no-download --check
+```
+
+Run once without `--no-download` to fetch missing generator-only corpus data.
+The generated asset contains 108,845 entries and has SHA-256
+`d6bb00754d7107aee080638982160a87a32aa0a65dd705392e8731c00b50b03c`.
+See [Third-party data notices](../THIRD_PARTY_NOTICES.md) for attribution.
 
 ## Recommended manual smoke test
 

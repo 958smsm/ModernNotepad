@@ -5,7 +5,7 @@ namespace ModernNotepad.Core.Analysis;
 public static class TextTokenizer
 {
     private static readonly Regex WordRegex = new(
-        @"\b(?:[\p{L}\p{M}]+(?:['’\-][\p{L}\p{M}]+)*|\p{N}+(?:[.,:/\-]\p{N}+)*(?:st|nd|rd|th)?)\b%?",
+        @"(?:\b(?:[\p{L}\p{M}]\.){2,}|\b(?:[\p{L}\p{M}]+(?:['\u2019\u02BC-][\p{L}\p{M}]+)*|\p{N}+(?:[.,:/-]\p{N}+)*(?:st|nd|rd|th)?)\b%?)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.NonBacktracking);
 
     public static IReadOnlyList<TextToken> Tokenize(

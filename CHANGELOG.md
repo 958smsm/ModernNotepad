@@ -9,10 +9,22 @@
 - Google Cloud syntax responses use UTF-16 offsets and are mapped back to the existing `GrammarAnalysis` category/span contract.
 - Provider failures are logged with known API keys redacted and automatically fall back to local grammar analysis for the current pass.
 - Reworked **Logic & Traditional NLP** into a context-sensitive sentence/clause analyzer with stronger polysemy, noun-role, relative-clause, inversion, coordination, gerund/participle, and function-word handling.
+- Replaced the small hand-maintained Traditional lexicon with a deterministic,
+  compressed 108,845-word WordNet/Brown asset that preserves weighted
+  multi-part-of-speech profiles while retaining the public
+  `GrammarLexicon.Lexicon` compatibility field.
+- Added productive morphology for regular inflections, broad irregular
+  verb/plural/comparison forms, possessives and compounds, plus context-aware
+  proper-name, acronym, contraction, phrasal-verb, and unknown-word handling.
+- Added a versioned Universal Dependencies English EWT 2.18 accuracy/throughput
+  benchmark with release gates and third-party data notices.
 - Replaced repeated sentence/paragraph token rescans with forward span/token indexing; removed core analysis/finding truncation and moved the visual-span limit to WPF rendering only.
 - Hardened sentence segmentation around common abbreviations, initials, initialisms, decimals, ellipses, and closing punctuation.
 - Added pronunciation-aware article checks, high-confidence pronoun/auxiliary agreement checks, and broader passive patterns.
 - Added 102,000-word Traditional-analysis stress coverage and grammar regression tests for ambiguity and complex syntax.
+- Added production regressions for rare lexicon entries, ambiguous noun/verb
+  readings, regular and irregular forms, Unicode and stacked contractions,
+  proper names/acronyms, split infinitives, phrasal particles, and coined words.
 - Batched optional NLTK tagging and chunked optional spaCy processing below the active pipeline's `max_length`.
 - Split Traditional function-word output into explicit **Determiner** and **Particle** categories so articles (`a`, `an`, `the`) and infinitival/phrasal particles (`to`, `off`) are no longer mislabeled or omitted.
 - Added contextual handling for content-vs-relative `that`, wh-subordinators, gerunds/progressives, passive-vs-stative participles, serial coordinated subjects, contractions, and numeric/date/percentage/ordinal tokens.
